@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 int main(int argc, char *argv[]){
     int sock;
@@ -18,6 +19,8 @@ int main(int argc, char *argv[]){
     int fileFound = -1;
     char dataBuffer[32];
     char *filename;
+
+    time_t begin, end;
 
     if(argc != 3){
         printf("usage: deliver <server address> <server port number>\n");
@@ -55,6 +58,7 @@ int main(int argc, char *argv[]){
     }
 
     if(fileFound){
+        time(&begin);
         sendto(sock, ftp, (strlen(ftp)+1), 0, (struct sockaddr *)&server, sizeof(server));
     }else{
         printf("file does not exist\n");
@@ -65,7 +69,9 @@ int main(int argc, char *argv[]){
     address_size = sizeof(server);
 
     recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &address_size);
-    
+    time(&end);
+    printf("round trip time: %f seconds\n", difftime(end, begin));
+
     if(strcmp(dataBuffer, "yes") == 0){
         printf("A file transfer can start\n");
     }else{

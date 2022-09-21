@@ -37,7 +37,7 @@ int main(int argc, char const *argv[]){
 
     bind(sock, (struct sockaddr *)&server, sizeof(server));
 
-    printf("server started\n");
+    printf("server started on %d\n", port);
 
     addr_size = sizeof(client);
     
