@@ -20,7 +20,7 @@ int main(int argc, char const *argv[]){
     char *ip = "127.0.0.1";
     int port = atoi(argv[1]);
 
-    int sock, n;
+    int sock;
     struct sockaddr_in server, client;
     char dataBuffer[BUFFER_SIZE];
     socklen_t addr_size;
