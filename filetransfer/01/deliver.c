@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
     if(fileFound){
         sendto(sock, ftp, (strlen(ftp)+1), 0, (struct sockaddr *)&server, sizeof(server));
     }else{
-        printf("file does not exist");
+        printf("file does not exist\n");
         close(sock);
         return 0;
     }

@@ -31,8 +31,6 @@ int main(int argc, char const *argv[]){
     
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    memset(&server, '\0', sizeof(server));
-
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr(ip);
@@ -55,8 +53,6 @@ int main(int argc, char const *argv[]){
             printf("sent no");
         }
     }
-    
-
 
     close(sock);
     return 0;
