@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
     recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &address_size);
     
     if(strcmp(dataBuffer, "yes") == 0){
-        printf("A file transfer can start");printf("A file transfer can start\n");
+        printf("A file transfer can start\n");
     }else{
         printf("received no\n");
         close(sock);

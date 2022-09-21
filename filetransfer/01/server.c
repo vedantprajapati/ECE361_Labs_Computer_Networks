@@ -37,7 +37,7 @@ int main(int argc, char const *argv[]){
 
     bind(sock, (struct sockaddr *)&server, sizeof(server));
 
-    printf("server started");
+    printf("server started\n");
 
     addr_size = sizeof(client);
     
@@ -45,12 +45,12 @@ int main(int argc, char const *argv[]){
         recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size);
 
         if(strcmp(dataBuffer, ftp) == 0){
-            printf("received ftp");
+            printf("received ftp\n");
             sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client));
-            printf("sent yes");
+            printf("sent yes\n");
         }else{
             sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
-            printf("sent no");
+            printf("sent no\n");
         }
     }
 
