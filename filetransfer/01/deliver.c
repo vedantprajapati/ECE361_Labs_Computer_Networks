@@ -57,6 +57,7 @@ int main(int argc, char *argv[]){
     if(fileFound){
         sendto(sock, ftp, (strlen(ftp)+1), 0, (struct sockaddr *)&server, sizeof(server));
     }else{
+        printf("file does not exist");
         close(sock);
         return 0;
     }
@@ -64,7 +65,15 @@ int main(int argc, char *argv[]){
     address_size = sizeof(server);
 
     recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &address_size);
-    printf("%s",dataBuffer);
+    
+    if(strcmp(dataBuffer, "yes") == 0){
+        printf("A file transfer can start");printf("A file transfer can start\n");
+    }else{
+        printf("received no\n");
+        close(sock);
+        return 0;
+    }
+    
     close(sock);
     return 0;
 }
