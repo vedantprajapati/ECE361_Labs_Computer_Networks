@@ -10,7 +10,7 @@
 
 #define BUFFER_SIZE 32
 
-int main(int argc, char const **argv[]){
+int main(int argc, char const *argv[]){
     
     if(argc != 2){
         printf("usage: server <udp listen port>\n");
@@ -39,17 +39,25 @@ int main(int argc, char const **argv[]){
 
     bind(sock, (struct sockaddr *)&server, sizeof(server));
 
+    printf("server started");
+
     addr_size = sizeof(client);
-
-    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size);
-
-    if(strcmp(dataBuffer, ftp) == 0){
-        sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client));
-    }else{
-        sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
-    }
-
-
     
+    while(1){
+        recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size);
+
+        if(strcmp(dataBuffer, ftp) == 0){
+            printf("received ftp");
+            sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            printf("sent yes");
+        }else{
+            sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            printf("sent no");
+        }
+    }
+    
+
+
+    close(sock);
     return 0;
 }

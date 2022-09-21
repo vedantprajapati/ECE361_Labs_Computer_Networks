@@ -10,12 +10,14 @@
 
 int main(int argc, char *argv[]){
     int sock;
+    unsigned int address_size;
     unsigned short port;
     struct sockaddr_in server;
     char* ftp = "ftp";
-    char* filename;
+    char user_input[32];
     int fileFound = -1;
-    char *dataBuffer[32];
+    char dataBuffer[32];
+    char *filename;
 
     if(argc != 3){
         printf("usage: deliver <server address> <server port number>\n");
@@ -33,8 +35,18 @@ int main(int argc, char *argv[]){
 
     printf("please input a message in the following format:\n");
     printf("ftp <file name>\n");
-    fgets(filename, 20, stdin);
-    filename[strlen(filename)-1] = '\0';
+
+    fgets(user_input, 32, stdin);
+    user_input[strlen(user_input)-1] = '\0';
+
+    filename = strtok(user_input, " ");
+
+    if(strcmp(filename, "ftp") == 0){
+        filename = strtok(NULL, "\0");
+    }else{
+        printf("input needs to be: ftp <filename>\n");
+        exit(1);
+    }
 
     if(access(filename, F_OK) == 0){
         fileFound = 1;
@@ -49,7 +61,10 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
-    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &server);
-        
+    address_size = sizeof(server);
+
+    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &address_size);
+    printf("%s",dataBuffer);
+    close(sock);
     return 0;
 }
