@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <math.h>
 
 #define MAX_PACKET_SIZE 1000
 
@@ -20,17 +21,46 @@ struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
 };
 
 int fragment(FILE* file_to_send, char* buf){
-    int n = 0;
+    int i, len;
 
+    for(i = 0; i < MAX_PACKET_SIZE; i++){
+        buf[i] = fgetc(file_to_send);
+        if(buf[i] == EOF){
+            return 1;
+        }
+    }
     return 0;
 }
 
-int findSize(char filename){
+int findSize(char* filename){
     FILE* fp = fopen(filename, "r");   
     fseek(fp, 0L, SEEK_END);
     int res = ftell(fp);
     fclose(fp);
     return res;
+}
+
+int addIntToStr(char* inputStr, int num){
+    int size = (int)((ceil(log10(num))+1)*sizeof(char));
+    char str[size];
+    sprintf(str, "%d", num);
+    strcat(inputStr, str);
+    return 0;
+}
+
+char* formString(struct packet packet){
+    char *packetString;
+    addIntToStr(packetString, packet.total_frag);
+    strcat(packetString,":");
+    addIntToStr(packetString, packet.frag_no);
+    strcat(packetString,":");
+    addIntToStr(packetString,packet.size);
+    strcat(packetString,":");
+    strcat(packetString,packet.filename);
+    strcat(packetString,":");
+    strcat(packetString,packet.filedata);
+    
+    return packetString;
 }
 
 int main(int argc, char *argv[]){
@@ -113,12 +143,10 @@ int main(int argc, char *argv[]){
     fileTranPacket.size = findSize(filename);
     fileTranPacket.total_frag = (fileTranPacket.size + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
 
-    while(n < fileTranPacket.total_frag){
+    while(n < fileTranPacket.total_frag){//packet format: "total_frag:frag_no:size:filename:filedata"
         fileTranPacket.frag_no = n;
-
-        //packetstring;
-        //sendto(sock, fileTranPacket, (strlen(fileTranPacket)+1), 0, (struct sockaddr *)&server, sizeof(server));
-
+        fragment(file_to_send, fileTranPacket.filedata);
+        packetString = formString(fileTranPacket);//fileTranPacket.total_frag + ":" + fileTranPacket.frag_no + ":" + fileTranPacket.size + ":" + fileTranPacket.filedata;
         n++;
     }
     

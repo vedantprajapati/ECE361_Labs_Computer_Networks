@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(lldb) deliver",
+            "name": "(lldb) deliver 2",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/filetransfer/02/deliver",
