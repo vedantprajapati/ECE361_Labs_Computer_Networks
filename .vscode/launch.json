@@ -8,6 +8,18 @@
             "name": "(lldb) deliver",
             "type": "cppdbg",
             "request": "launch",
+            "program": "${workspaceFolder}/filetransfer/02/deliver",
+            "args": ["127.0.0.1","8080"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "lldb"
+        },
+        {
+            "name": "(lldb) deliver",
+            "type": "cppdbg",
+            "request": "launch",
             "program": "${workspaceFolder}/filetransfer/01/deliver",
             "args": ["127.0.0.1","8080"],
             "stopAtEntry": false,
