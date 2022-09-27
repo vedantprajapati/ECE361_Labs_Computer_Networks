@@ -11,7 +11,7 @@
 #define BUFFER_SIZE 32
 
 int main(int argc, char const *argv[]){
-    
+
     if(argc != 2){
         printf("usage: server <udp listen port>\n");
         exit(0);
@@ -28,28 +28,40 @@ int main(int argc, char const *argv[]){
     char *ftp = "ftp";
     char *no = "no";
     char *yes = "yes";
-    
+
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr(ip);
 
-    bind(sock, (struct sockaddr *)&server, sizeof(server));
+    if (bind(sock, (struct sockaddr *)&server, sizeof(server)) == -1){
+        printf("Error: Cannot bind socket to server\n");
+        exit(1);
+    }
 
     printf("server started on %d\n", port);
 
     addr_size = sizeof(client);
-    
+
     while(1){
-        recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size);
+        if (recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size) == -1){
+            printf("Error: Cannot recieve information from socket\n");
+            exit(1);
+        };
 
         if(strcmp(dataBuffer, ftp) == 0){
             printf("received ftp\n");
-            sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            if (sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client)) == -1){
+                printf("Error: Cannot recieve information from socket\n");
+                exit(1);
+            };
             printf("sent yes\n");
         }else{
-            sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            if (sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client)) == -1){
+                printf("Error: Cannot recieve information from socket\n");
+                exit(1);
+            };
             printf("sent no\n");
         }
     }
