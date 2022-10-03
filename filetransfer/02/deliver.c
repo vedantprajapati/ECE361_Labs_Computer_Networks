@@ -17,19 +17,21 @@ struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
     unsigned int frag_no; //sequence number of fragment
     unsigned int size; //size of data, range [0,1000]
     char* filename;
-    char filedata[1000];
+    char filedata[MAX_PACKET_SIZE];
 };
 
 int fragment(FILE* file_to_send, char* buf){
     int i, len;
+    len = 1;
 
     for(i = 0; i < MAX_PACKET_SIZE; i++){
         buf[i] = fgetc(file_to_send);
         if(buf[i] == EOF){
-            return 1;
+            return len;
         }
+        len++;
     }
-    return 0;
+    return len;
 }
 
 int findSize(char* filename){
@@ -48,16 +50,18 @@ int addIntToStr(char* inputStr, int num){
     return 0;
 }
 
-char* formString(struct packet packet){
-    char *packetString;
-    addIntToStr(packetString, packet.total_frag);
+char* formStartOfString(struct packet *packet, char *packetString){
+    memset(packetString,0,MAX_PACKET_SIZE);
+    
+    addIntToStr(packetString, packet->total_frag);
     strcat(packetString,":");
-    addIntToStr(packetString, packet.frag_no);
+    addIntToStr(packetString, packet->frag_no);
     strcat(packetString,":");
-    addIntToStr(packetString,packet.size);
+    addIntToStr(packetString,packet->size);
     strcat(packetString,":");
-    strcat(packetString,packet.filename);
+    strcat(packetString,packet->filename);
     strcat(packetString,":");
+    printf("%s\n",packetString);
     
     return packetString;
 }
@@ -87,7 +91,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in server;
     char* ftp = "ftp";
     char user_input[32];
-    int fileFound = -1;
+    int fileFound = 0;
     char dataBuffer[32];
     char *filename;
     char* binaryString; 
@@ -95,9 +99,6 @@ int main(int argc, char *argv[]){
     time_t begin, end;
 
     FILE* file_to_send;
-    struct packet fileTranPacket;
-    char* packetString;
-    int n = 1;
 
     if(argc != 3){
         printf("usage: deliver <server address> <server port number>\n");
@@ -129,8 +130,6 @@ int main(int argc, char *argv[]){
 
     if(access(filename, F_OK) == 0){
         fileFound = 1;
-    }else{
-        fileFound = 0;
     }
 
     if(fileFound){
@@ -156,18 +155,39 @@ int main(int argc, char *argv[]){
         close(sock);
         return 0;
     }
+    int fileSize = findSize(filename);
+    int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;   
 
-    fileTranPacket.filename = filename;
-    fileTranPacket.size = findSize(filename);
-    fileTranPacket.total_frag = (fileTranPacket.size + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
+    char **fragments = malloc(sizeof(char)*totalFrag);
+    
+    int j;
+    for(j = 0; j < totalFrag; j++){
+        fragments[j] = malloc(sizeof(char)*MAX_PACKET_SIZE);
+        fragment(file_to_send, fragments[j]);
+    }
 
-    while(n < fileTranPacket.total_frag){//packet format: "total_frag:frag_no:size:filename:filedata"
+    char **packets = malloc(sizeof(char)* totalFrag);
+
+    int n;
+    for(n = 1; n < totalFrag+1; n++){
+        struct packet curPacket;
+
+        curPacket.filename = filename;
+        curPacket.total_frag = totalFrag;
+        curPacket.frag_no = n;
+        memset(curPacket.filedata, 0, sizeof(char)*MAX_PACKET_SIZE);
+        
+        packets[n - 1] = malloc(MAX_PACKET_SIZE*sizeof(char));
+        formStartOfString(&curPacket, packets[n-1]);
+    }
+
+    /*while(n < fileTranPacket.total_frag){//packet format: "total_frag:frag_no:size:filename:filedata"
         fileTranPacket.frag_no = n;
         fragment(file_to_send, fileTranPacket.filedata);
         packetString = formString(fileTranPacket);//fileTranPacket.total_frag + ":" + fileTranPacket.frag_no + ":" + fileTranPacket.size + ":" + fileTranPacket.filedata;
         binaryString = stringToBinary(packetString);
         n++;
-    }
+    }*/
     
     close(sock);
     return 0;
