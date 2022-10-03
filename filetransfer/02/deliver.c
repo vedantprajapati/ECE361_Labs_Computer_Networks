@@ -61,27 +61,15 @@ char* formStartOfString(struct packet *packet, char *packetString){
     strcat(packetString,":");
     strcat(packetString,packet->filename);
     strcat(packetString,":");
-    printf("%s\n",packetString);
+    //printf("%s\n",packetString);
     
     return packetString;
 }
 
-char* stringToBinary(char* s) {
-    if(s == NULL) return 0; /* no input string */
-    size_t len = strlen(s);
-    char *binary = malloc(len*8 + 1); // each char is one byte (8 bits) and + 1 at the end for null terminator
-    binary[0] = '\0';
-    for(size_t i = 0; i < len; ++i) {
-        char ch = s[i];
-        for(int j = 7; j >= 0; --j){
-            if(ch & (1 << j)) {
-                strcat(binary,"1");
-            } else {
-                strcat(binary,"0");
-            }
-        }
-    }
-    return binary;
+int appendFragment(char* fragment, char* packetString, int size){
+    int endOfString = strlen(packetString)+1;
+    memcpy(&packetString+endOfString, &fragment, sizeof(char)*size);
+    return 0;
 }
 
 int main(int argc, char *argv[]){
@@ -175,19 +163,19 @@ int main(int argc, char *argv[]){
         curPacket.filename = filename;
         curPacket.total_frag = totalFrag;
         curPacket.frag_no = n;
+        if(n != totalFrag){
+            curPacket.size = MAX_PACKET_SIZE;
+        }else{
+            curPacket.size = fileSize % MAX_PACKET_SIZE;
+        }
         memset(curPacket.filedata, 0, sizeof(char)*MAX_PACKET_SIZE);
         
         packets[n - 1] = malloc(MAX_PACKET_SIZE*sizeof(char));
         formStartOfString(&curPacket, packets[n-1]);
+        appendFragment(fragments[n-1],packets[n-1],curPacket.size);
+        printf("%s\n", packets[n-1]);
     }
 
-    /*while(n < fileTranPacket.total_frag){//packet format: "total_frag:frag_no:size:filename:filedata"
-        fileTranPacket.frag_no = n;
-        fragment(file_to_send, fileTranPacket.filedata);
-        packetString = formString(fileTranPacket);//fileTranPacket.total_frag + ":" + fileTranPacket.frag_no + ":" + fileTranPacket.size + ":" + fileTranPacket.filedata;
-        binaryString = stringToBinary(packetString);
-        n++;
-    }*/
     
     close(sock);
     return 0;
