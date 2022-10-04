@@ -11,6 +11,7 @@
 #include <math.h>
 
 #define MAX_PACKET_SIZE 1000
+#define RECV_PACKET_SIZE 1100
 
 struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
     unsigned int total_frag; //total number of fragments of the file
@@ -32,13 +33,13 @@ int findSize(char* filename){
     return res;
 }
 
-int addIntToStr(char* inputStr, int num){
-    int size = (int)((ceil(log10(num))+1)*sizeof(char));
-    char str[size];
-    sprintf(str, "%d", num);
-    strcat(inputStr, str);
-    return 0;
-}
+// int addIntToStr(char* inputStr, int num){
+//     int size = (int)((ceil(log10(num))+1)*sizeof(char));
+//     char str[size];
+//     sprintf(str, "%d", num);
+//     strcat(inputStr, str);
+//     return 0;
+// }
 
 // char* formStartOfString(struct packet *packet, char *packetString){
 
@@ -67,6 +68,43 @@ int addIntToStr(char* inputStr, int num){
 //     // memcpy(packetString+endOfString, fragment, sizeof(char)*size);
 //     return 0;
 // }
+
+int stringToPacket(char* recvBuffer, struct packet *recvPacket){
+    //packet format: "total_frag:frag_no:size:filename:filedata"
+    char* token;
+    token = strtok(recvBuffer,":");
+    int count = 0;
+    while(token != NULL){
+        switch (count)
+        {
+        case 0:
+            recvPacket->total_frag = token;
+            count++;
+            break;
+        case 1:
+            recvPacket->frag_no = token;
+            count++;
+            break;
+        case 2:
+            recvPacket->size = token;
+            count++;
+            break;
+        case 3:
+            recvPacket->filename = token;
+            count++;
+            break;
+        case 4:
+            recvPacket->filedata = token;
+            count++;
+            break;
+        default:
+            printf("string to packet error\n");
+            exit(2);
+            break;
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char *argv[]){
     int sock;
@@ -165,9 +203,9 @@ int main(int argc, char *argv[]){
         }else{
             curPacket.size = fileSize % MAX_PACKET_SIZE;
         }
-        printf("%s", curPacket.filename);
-        printf("%d", curPacket.frag_no );
-        printf("%d", totalFrag );
+        //printf("%s", curPacket.filename);
+        //printf("%d", curPacket.frag_no );
+        //printf("%d", totalFrag );
 
 
         memset(curPacket.filedata, 0, sizeof(char)*MAX_PACKET_SIZE);
@@ -179,10 +217,22 @@ int main(int argc, char *argv[]){
         packets[n - 1] = realloc(packets[n - 1], packetSize);
         memcpy(packets[n - 1] + written, fragments[n - 1], curPacket.size);
 
-        // appendFragment(fragments[n-1],packets[n-1],curPacket.size);
         fprintf(stderr, "%s\n", packets[n-1]);
     }
 
+    struct packet recvPacket;
+    recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
+    
+    char *recvBuffer[RECV_PACKET_SIZE];
+
+
+    for(n = 0; n < totalFrag; n++){
+        sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
+        memset(recvBuffer,0, sizeof(char)*RECV_PACKET_SIZE);
+        recvfrom(sock, recvBuffer, sizeof(recvBuffer), 0, (struct sockaddr *) &server, &address_size);
+
+        stringToPacket(recvBuffer, &recvPacket);
+    }
     
     close(sock);
     return 0;
