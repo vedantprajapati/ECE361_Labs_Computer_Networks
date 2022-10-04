@@ -21,17 +21,7 @@ struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
 };
 
 int fragment(FILE* file_to_send, char* buf){
-    int i, len;
-    len = 1;
-
-    for(i = 0; i < MAX_PACKET_SIZE; i++){
-        buf[i] = fgetc(file_to_send);
-        if(buf[i] == EOF){
-            return len;
-        }
-        len++;
-    }
-    return len;
+    return fread(buf, sizeof(char), MAX_PACKET_SIZE, file_to_send);
 }
 
 int findSize(char* filename){
@@ -50,27 +40,33 @@ int addIntToStr(char* inputStr, int num){
     return 0;
 }
 
-char* formStartOfString(struct packet *packet, char *packetString){
-    memset(packetString,0,MAX_PACKET_SIZE);
-    
-    addIntToStr(packetString, packet->total_frag);
-    strcat(packetString,":");
-    addIntToStr(packetString, packet->frag_no);
-    strcat(packetString,":");
-    addIntToStr(packetString,packet->size);
-    strcat(packetString,":");
-    strcat(packetString,packet->filename);
-    strcat(packetString,":");
-    //printf("%s\n",packetString);
-    
-    return packetString;
-}
+// char* formStartOfString(struct packet *packet, char *packetString){
 
-int appendFragment(char* fragment, char* packetString, int size){
-    int endOfString = strlen(packetString)+1;
-    memcpy(&packetString+endOfString, &fragment, sizeof(char)*size);
-    return 0;
-}
+    
+//     // addIntToStr(packetString, packet->total_frag);
+//     // strcat(packetString,":");
+//     // addIntToStr(packetString, packet->frag_no);
+//     // strcat(packetString,":");
+//     // addIntToStr(packetString,packet->size);
+//     // strcat(packetString,":");
+//     // strcat(packetString,packet->filename);
+//     // strcat(packetString,":");
+//     //printf("%s\n",packetString);
+    
+//     return packetString;
+// }
+
+// int appendFragment(char* fragment, char* packetString, int size){
+//     printf("total_frag : %s\n", strtok(fragment, ":"));
+//     printf("frag_no: %s\n", strtok(fragment, ":"));
+//     printf("size: %s\n", strtok(fragment, ":"));
+//     printf("filename %s\n", strtok(fragment, ":"));
+//     printf("filedata %s\n", strtok(fragment, ":"));
+
+//     // int endOfString = strlen(packetString);
+//     // memcpy(packetString+endOfString, fragment, sizeof(char)*size);
+//     return 0;
+// }
 
 int main(int argc, char *argv[]){
     int sock;
@@ -143,10 +139,11 @@ int main(int argc, char *argv[]){
         close(sock);
         return 0;
     }
+    
     int fileSize = findSize(filename);
     int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;   
 
-    char **fragments = malloc(sizeof(char)*totalFrag);
+    char **fragments = malloc(sizeof(char*)*totalFrag);
     
     int j;
     for(j = 0; j < totalFrag; j++){
@@ -154,7 +151,7 @@ int main(int argc, char *argv[]){
         fragment(file_to_send, fragments[j]);
     }
 
-    char **packets = malloc(sizeof(char)* totalFrag);
+    char **packets = malloc(sizeof(char*) * totalFrag);
 
     int n;
     for(n = 1; n < totalFrag+1; n++){
@@ -168,12 +165,22 @@ int main(int argc, char *argv[]){
         }else{
             curPacket.size = fileSize % MAX_PACKET_SIZE;
         }
+        printf("%s", curPacket.filename);
+        printf("%d", curPacket.frag_no );
+        printf("%d", totalFrag );
+
+
         memset(curPacket.filedata, 0, sizeof(char)*MAX_PACKET_SIZE);
         
         packets[n - 1] = malloc(MAX_PACKET_SIZE*sizeof(char));
-        formStartOfString(&curPacket, packets[n-1]);
-        appendFragment(fragments[n-1],packets[n-1],curPacket.size);
-        printf("%s\n", packets[n-1]);
+        memset(packets[n - 1], 0, MAX_PACKET_SIZE);
+        int written = sprintf(packets[n - 1], "%d:%d:%d:%s:", curPacket.total_frag, curPacket.frag_no, curPacket.size, curPacket.filename);
+        int packetSize = written + curPacket.size;
+        packets[n - 1] = realloc(packets[n - 1], packetSize);
+        memcpy(packets[n - 1] + written, fragments[n - 1], curPacket.size);
+
+        // appendFragment(fragments[n-1],packets[n-1],curPacket.size);
+        fprintf(stderr, "%s\n", packets[n-1]);
     }
 
     
