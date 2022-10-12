@@ -69,42 +69,53 @@ int findSize(char* filename){
 //     return 0;
 // }
 
-int stringToPacket(char* recvBuffer, struct packet *recvPacket){
-    //packet format: "total_frag:frag_no:size:filename:filedata"
-    char* token;
-    token = strtok(recvBuffer,":");
-    int count = 0;
-    while(token != NULL){
-        switch (count)
-        {
-        case 0:
-            recvPacket->total_frag = token;
-            count++;
-            break;
-        case 1:
-            recvPacket->frag_no = token;
-            count++;
-            break;
-        case 2:
-            recvPacket->size = token;
-            count++;
-            break;
-        case 3:
-            recvPacket->filename = token;
-            count++;
-            break;
-        case 4:
-            recvPacket->filedata = token;
-            count++;
-            break;
-        default:
-            printf("string to packet error\n");
-            exit(2);
-            break;
-        }
-    }
-    return 0;
-}
+// int stringToPacket(char* recvBuffer, struct packet *recvPacket){
+//     //packet format: "total_frag:frag_no:size:filename:filedata"
+//     char* token;
+//     token = strtok(recvBuffer,":");
+//     int count = 0;
+//     //     printf("total_frag : %s\n", strtok(fragment, ":"));
+//     printf("yooooooooo");
+//     printf("vuffer: %s\n", recvBuffer);
+
+//     printf("frag_no: %s\n", token);
+
+//     while(token != NULL){
+//         switch (count)
+//         {
+//         case 0:
+//             recvPacket->total_frag = token;
+//             count++;
+//             break;
+//         case 1:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->frag_no = token;
+//             count++;
+//             break;
+//         case 2:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->size = token;
+//             count++;
+//             break;
+//         case 3:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->filename = token;
+//             count++;
+//             break;
+//         case 4:
+//             token = strtok(recvBuffer,":");
+//             printf("frag_no: %s\n", token);
+//             // recvPacket->filedata = token;
+//             count++;
+//             break;
+//         default:
+//             printf("string to packet error\n");
+//             exit(2);
+//             break;
+//         }
+//     }
+//     return 0;
+// }
 
 int main(int argc, char *argv[]){
     int sock;
@@ -121,7 +132,6 @@ int main(int argc, char *argv[]){
     time_t begin, end;
 
     FILE* file_to_send;
-
     if(argc != 3){
         printf("usage: deliver <server address> <server port number>\n");
         exit(0);
@@ -139,6 +149,7 @@ int main(int argc, char *argv[]){
     printf("ftp <file name>\n");
 
     fgets(user_input, 32, stdin);
+
     user_input[strlen(user_input)-1] = '\0';
 
     filename = strtok(user_input, " ");
@@ -178,8 +189,11 @@ int main(int argc, char *argv[]){
         return 0;
     }
     
+    
     int fileSize = findSize(filename);
+    //get the total number of fragments from the file size + max_packet size -1
     int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;   
+
 
     char **fragments = malloc(sizeof(char*)*totalFrag);
     
@@ -217,21 +231,24 @@ int main(int argc, char *argv[]){
         packets[n - 1] = realloc(packets[n - 1], packetSize);
         memcpy(packets[n - 1] + written, fragments[n - 1], curPacket.size);
 
-        fprintf(stderr, "%s\n", packets[n-1]);
+        // fprintf(stderr, "%s\n", packets[n-1]);
     }
 
     struct packet recvPacket;
-    recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
+    memset(recvPacket.filedata,0,sizeof(char)*MAX_PACKET_SIZE);
+    // recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
     
-    char *recvBuffer[RECV_PACKET_SIZE];
+    char recvBuffer[RECV_PACKET_SIZE];
 
 
     for(n = 0; n < totalFrag; n++){
-        sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
-        memset(recvBuffer,0, sizeof(char)*RECV_PACKET_SIZE);
-        recvfrom(sock, recvBuffer, sizeof(recvBuffer), 0, (struct sockaddr *) &server, &address_size);
 
-        stringToPacket(recvBuffer, &recvPacket);
+        sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
+        // memset(recvBuffer,0, sizeof(char)*RECV_PACKET_SIZE);
+
+        recvfrom(sock, recvBuffer, sizeof(recvBuffer), 0, (struct sockaddr *) &server, &address_size);
+        printf("%s",recvBuffer)
+        // stringToPacket(recvBuffer, &recvPacket);
     }
     
     close(sock);
