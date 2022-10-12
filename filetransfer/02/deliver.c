@@ -195,9 +195,9 @@ int main(int argc, char *argv[])
         }
 
         if(strcmp(ackBuffer, "OK") == 0){
-            printf("%d packet sent successfully\n", n+1);
+            printf("%d/%d packets sent successfully\n", n+1, totalFrag);
         }else if(strcmp(ackBuffer, "DONE") == 0){
-            printf("%d packet sent successfully\n", n+1);
+            printf("%d/%d packets sent successfully\n", n+1, totalFrag);
             printf("finished sending packets\n");
             time(&end);
             printf("round trip time: %f secondss\n", difftime(end, begin));
