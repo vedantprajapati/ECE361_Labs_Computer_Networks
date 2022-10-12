@@ -27,9 +27,6 @@ int stringToPacket(char* recvBuffer, struct packet *recvPacket){
     char* token;
     token = strtok(recvBuffer,":");
     int count = 0;
-    //     printf("total_frag : %s\n", strtok(fragment, ":"));
-    printf("yooooooooo");
-    printf("vuffer: %s\n", recvBuffer);
 
     printf("frag_no: %s\n", token);
 
@@ -150,8 +147,8 @@ int main(int argc, char const *argv[]){
             packetsStrings[fragNo-1] = malloc(sizeof(char)*size);
             memcpy(packetsStrings[fragNo-1], filedata, sizeof(char)*size);
 
-            sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
-            printf("sent no\n");
+            // sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            // printf("sent no\n");
 
             receivedPackets++;
             fileSize += size;

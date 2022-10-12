@@ -33,90 +33,6 @@ int findSize(char* filename){
     return res;
 }
 
-// int addIntToStr(char* inputStr, int num){
-//     int size = (int)((ceil(log10(num))+1)*sizeof(char));
-//     char str[size];
-//     sprintf(str, "%d", num);
-//     strcat(inputStr, str);
-//     return 0;
-// }
-
-// char* formStartOfString(struct packet *packet, char *packetString){
-
-    
-//     // addIntToStr(packetString, packet->total_frag);
-//     // strcat(packetString,":");
-//     // addIntToStr(packetString, packet->frag_no);
-//     // strcat(packetString,":");
-//     // addIntToStr(packetString,packet->size);
-//     // strcat(packetString,":");
-//     // strcat(packetString,packet->filename);
-//     // strcat(packetString,":");
-//     //printf("%s\n",packetString);
-    
-//     return packetString;
-// }
-
-// int appendFragment(char* fragment, char* packetString, int size){
-//     printf("total_frag : %s\n", strtok(fragment, ":"));
-//     printf("frag_no: %s\n", strtok(fragment, ":"));
-//     printf("size: %s\n", strtok(fragment, ":"));
-//     printf("filename %s\n", strtok(fragment, ":"));
-//     printf("filedata %s\n", strtok(fragment, ":"));
-
-//     // int endOfString = strlen(packetString);
-//     // memcpy(packetString+endOfString, fragment, sizeof(char)*size);
-//     return 0;
-// }
-
-// int stringToPacket(char* recvBuffer, struct packet *recvPacket){
-//     //packet format: "total_frag:frag_no:size:filename:filedata"
-//     char* token;
-//     token = strtok(recvBuffer,":");
-//     int count = 0;
-//     //     printf("total_frag : %s\n", strtok(fragment, ":"));
-//     printf("yooooooooo");
-//     printf("vuffer: %s\n", recvBuffer);
-
-//     printf("frag_no: %s\n", token);
-
-//     while(token != NULL){
-//         switch (count)
-//         {
-//         case 0:
-//             recvPacket->total_frag = token;
-//             count++;
-//             break;
-//         case 1:
-//             token = strtok(recvBuffer,":");
-//             recvPacket->frag_no = token;
-//             count++;
-//             break;
-//         case 2:
-//             token = strtok(recvBuffer,":");
-//             recvPacket->size = token;
-//             count++;
-//             break;
-//         case 3:
-//             token = strtok(recvBuffer,":");
-//             recvPacket->filename = token;
-//             count++;
-//             break;
-//         case 4:
-//             token = strtok(recvBuffer,":");
-//             printf("frag_no: %s\n", token);
-//             // recvPacket->filedata = token;
-//             count++;
-//             break;
-//         default:
-//             printf("string to packet error\n");
-//             exit(2);
-//             break;
-//         }
-//     }
-//     return 0;
-// }
-
 int main(int argc, char *argv[]){
     int sock;
     unsigned int address_size;
@@ -244,11 +160,8 @@ int main(int argc, char *argv[]){
     for(n = 0; n < totalFrag; n++){
 
         sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
-        // memset(recvBuffer,0, sizeof(char)*RECV_PACKET_SIZE);
 
         recvfrom(sock, recvBuffer, sizeof(recvBuffer), 0, (struct sockaddr *) &server, &address_size);
-        printf("%s",recvBuffer)
-        // stringToPacket(recvBuffer, &recvPacket);
     }
     
     close(sock);
