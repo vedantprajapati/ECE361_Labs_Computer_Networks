@@ -45,7 +45,14 @@ int main(int argc, char *argv[]){
     char *filename;
     char* binaryString; 
 
+    char *ok = "OK";
+    char *done = "DONE";
+
     time_t begin, end;
+
+    struct timeval ack_timeout;
+    ack_timeout.tv_sec = 2;
+    ack_timeout.tv_usec = 0;
 
     FILE* file_to_send;
     if(argc != 3){
@@ -153,15 +160,29 @@ int main(int argc, char *argv[]){
     struct packet recvPacket;
     memset(recvPacket.filedata,0,sizeof(char)*MAX_PACKET_SIZE);
     // recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
-    
-    char recvBuffer[RECV_PACKET_SIZE];
+    char ackBuffer[10];
 
+    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, (char*)&ack_timeout, sizeof(ack_timeout));
 
     for(n = 0; n < totalFrag; n++){
 
         sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
+        
+        if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
+            printf("timed out\n");
+            close(sock);
+        return 0;
+        }
 
-        recvfrom(sock, recvBuffer, sizeof(recvBuffer), 0, (struct sockaddr *) &server, &address_size);
+        if(strcmp(ackBuffer, "OK") == 0){
+            printf("%d packet sent successfully\n", n);
+        }else if(strcmp(ackBuffer, "DONE") == 0){
+            printf("finished sending packets\n");
+        }else{
+            printf("acknowledgement error\n");
+            close(sock);
+            return 0;
+        }
     }
     
     close(sock);

@@ -22,50 +22,50 @@ struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
     char filedata[MAX_PACKET_SIZE];
 };
 
-int stringToPacket(char* recvBuffer, struct packet *recvPacket){
-    //packet format: "total_frag:frag_no:size:filename:filedata"
-    char* token;
-    token = strtok(recvBuffer,":");
-    int count = 0;
+// int stringToPacket(char* recvBuffer, struct packet *recvPacket){
+//     //packet format: "total_frag:frag_no:size:filename:filedata"
+//     char* token;
+//     token = strtok(recvBuffer,":");
+//     int count = 0;
 
-    printf("frag_no: %s\n", token);
+//     printf("frag_no: %s\n", token);
 
-    while(token != NULL){
-        switch (count)
-        {
-        case 0:
-            recvPacket->total_frag = token;
-            count++;
-            break;
-        case 1:
-            token = strtok(recvBuffer,":");
-            recvPacket->frag_no = token;
-            count++;
-            break;
-        case 2:
-            token = strtok(recvBuffer,":");
-            recvPacket->size = token;
-            count++;
-            break;
-        case 3:
-            token = strtok(recvBuffer,":");
-            recvPacket->filename = token;
-            count++;
-            break;
-        case 4:
-            token = strtok(recvBuffer,":");
-            printf("frag_no: %s\n", token);
-            // recvPacket->filedata = token;
-            count++;
-            break;
-        default:
-            printf("string to packet error\n");
-            exit(2);
-            break;
-        }
-    }
-    return 0;
-}
+//     while(token != NULL){
+//         switch (count)
+//         {
+//         case 0:
+//             recvPacket->total_frag = token;
+//             count++;
+//             break;
+//         case 1:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->frag_no = token;
+//             count++;
+//             break;
+//         case 2:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->size = token;
+//             count++;
+//             break;
+//         case 3:
+//             token = strtok(recvBuffer,":");
+//             recvPacket->filename = token;
+//             count++;
+//             break;
+//         case 4:
+//             token = strtok(recvBuffer,":");
+//             printf("frag_no: %s\n", token);
+//             // recvPacket->filedata = token;
+//             count++;
+//             break;
+//         default:
+//             printf("string to packet error\n");
+//             exit(2);
+//             break;
+//         }
+//     }
+//     return 0;
+// }
 int parsePacket(char* recvBuffer, struct packet *recvPacket){
     //packet format: "total_frag:frag_no:size:filename:filedata"
     char* token;
@@ -97,6 +97,8 @@ int main(int argc, char const *argv[]){
     char *ftp = "ftp";
     char *no = "no";
     char *yes = "yes";
+    char *ok = "OK";
+    char *done = "DONE";
     
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -167,6 +169,9 @@ int main(int argc, char const *argv[]){
                 packetsAllocated = false;
                 free(packetsStrings);
                 packetsStrings = NULL;
+                sendto(sock, done, (strlen(done)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            }else{
+                sendto(sock, ok, (strlen(ok)+1), 0, (struct sockaddr *)&client, sizeof(client));
             }
         }
     }
