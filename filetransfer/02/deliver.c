@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
     if (fileFound)
     {
         file_to_send = fopen(filename, "r");
-        time(&begin);
         sendto(sock, ftp, (strlen(ftp) + 1), 0, (struct sockaddr *)&server, sizeof(server));
     }
     else
@@ -111,10 +110,14 @@ int main(int argc, char *argv[])
     }
 
     address_size = sizeof(server);
+    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, (char*)&ack_timeout, sizeof(ack_timeout));
 
-    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&server, &address_size);
-    time(&end);
-    printf("round trip time: %f secondss\n", difftime(end, begin));
+    if(recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&server, &address_size) == -1){
+        printf("no response from sever\n");
+        close(sock);
+        return 0;
+    }
+    
 
     if (strcmp(dataBuffer, "yes") == 0)
     {
@@ -178,23 +181,26 @@ int main(int argc, char *argv[])
     // recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
     char ackBuffer[10];
 
-    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, (char*)&ack_timeout, sizeof(ack_timeout));
-
+    
+    time(&begin);
     for (n = 0; n < totalFrag; n++)
     {
 
         sendto(sock, packets[n], (strlen(packets[n]) + 1), 0, (struct sockaddr *)&server, sizeof(server));
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
-            printf("timed out\n");
+            printf("no response from sever\n");
             close(sock);
-        return 0;
+            return 0;
         }
 
         if(strcmp(ackBuffer, "OK") == 0){
-            printf("%d packet sent successfully\n", n);
+            printf("%d packet sent successfully\n", n+1);
         }else if(strcmp(ackBuffer, "DONE") == 0){
+            printf("%d packet sent successfully\n", n+1);
             printf("finished sending packets\n");
+            time(&end);
+            printf("round trip time: %f secondss\n", difftime(end, begin));
         }else{
             printf("acknowledgement error\n");
             close(sock);

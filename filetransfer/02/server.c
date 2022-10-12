@@ -130,9 +130,8 @@ int main(int argc, char const *argv[]){
 
             if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
             {
-                printf("%s\n", dataBuffer);
-
-                printf("%d\n", totalFrag);
+                //printf("%s\n", dataBuffer);
+                //printf("%d\n", totalFrag);
                 packetsStrings = malloc(sizeof(char *) * totalFrag);
                 packetsAllocated = true;
             }
