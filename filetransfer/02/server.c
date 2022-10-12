@@ -14,74 +14,11 @@
 #define MAX_PACKET_SIZE 1000
 #define MIN(a, b) (a > b ? b : a)
 
-struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
-    unsigned int total_frag; //total number of fragments of the file
-    unsigned int frag_no; //sequence number of fragment
-    unsigned int size; //size of data, range [0,1000]
-    char* filename;
-    char filedata[MAX_PACKET_SIZE];
-};
+int main(int argc, char const *argv[])
+{
 
-int stringToPacket(char* recvBuffer, struct packet *recvPacket){
-    //packet format: "total_frag:frag_no:size:filename:filedata"
-    char* token;
-    token = strtok(recvBuffer,":");
-    int count = 0;
-
-    printf("frag_no: %s\n", token);
-
-    while(token != NULL){
-        switch (count)
-        {
-        case 0:
-            recvPacket->total_frag = token;
-            count++;
-            break;
-        case 1:
-            token = strtok(recvBuffer,":");
-            recvPacket->frag_no = token;
-            count++;
-            break;
-        case 2:
-            token = strtok(recvBuffer,":");
-            recvPacket->size = token;
-            count++;
-            break;
-        case 3:
-            token = strtok(recvBuffer,":");
-            recvPacket->filename = token;
-            count++;
-            break;
-        case 4:
-            token = strtok(recvBuffer,":");
-            printf("frag_no: %s\n", token);
-            // recvPacket->filedata = token;
-            count++;
-            break;
-        default:
-            printf("string to packet error\n");
-            exit(2);
-            break;
-        }
-    }
-    return 0;
-}
-int parsePacket(char* recvBuffer, struct packet *recvPacket){
-    //packet format: "total_frag:frag_no:size:filename:filedata"
-    char* token;
-    token = strtok(recvBuffer,":");
-    int count = 0;
-    //     printf("total_frag : %s\n", strtok(fragment, ":"));
-    printf("yooooooooo");
-    printf("vuffer: %s\n", recvBuffer);
-
-    printf("frag_no: %s\n", token);
-
-}
-
-int main(int argc, char const *argv[]){
-    
-    if(argc != 2){
+    if (argc != 2)
+    {
         printf("usage: server <udp listen port>\n");
         exit(0);
     }
@@ -95,9 +32,9 @@ int main(int argc, char const *argv[]){
     socklen_t addr_size;
 
     char *ftp = "ftp";
-    char *no = "no";
+    char *fileSent = "The file has been read and a binary data has been created";
     char *yes = "yes";
-    
+
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     server.sin_family = AF_INET;
@@ -114,48 +51,49 @@ int main(int argc, char const *argv[]){
     bool packetsAllocated = false;
     int receivedPackets = 0;
     int fileSize = 0;
-    while(1){
-        recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &client, &addr_size);
+    while (1)
+    {
+        recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&client, &addr_size);
 
-        if(strcmp(dataBuffer, ftp) == 0){
+        if (strcmp(dataBuffer, ftp) == 0)
+        {
             printf("received ftp\n");
-            sendto(sock, yes, (strlen(yes)+1), 0, (struct sockaddr *)&client, sizeof(client));
+            sendto(sock, yes, (strlen(yes) + 1), 0, (struct sockaddr *)&client, sizeof(client));
             printf("sent yes\n");
         }
-        else{
-             //create empty array of packets if not done yet
-            int totalFrag = atoi(strtok(dataBuffer ,":"));
+        else
+        {
+            // create empty array of packets if not done yet
+            int totalFrag = atoi(strtok(dataBuffer, ":"));
 
-            if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0){
-                printf("%s\n",dataBuffer);
+            if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
+            {
+                printf("%s\n", dataBuffer);
 
                 printf("%d\n", totalFrag);
-                packetsStrings = malloc(sizeof(char*) * totalFrag);
+                packetsStrings = malloc(sizeof(char *) * totalFrag);
                 packetsAllocated = true;
             }
-            // save a new packet string
-            // if (currPacketIndex == 0 && packetsAllocated != 0){
 
             // ** FOR SOME
-            int fragNo = atoi(strtok(NULL,":"));
+            int fragNo = atoi(strtok(NULL, ":"));
 
             printf("got %d\n", fragNo);
-            int size = atoi(strtok(NULL,":"));
-            char *fileName = strtok(NULL,":");
+            int size = atoi(strtok(NULL, ":"));
+            char *fileName = strtok(NULL, ":");
             char *filedata = fileName + strlen(fileName) + 1;
 
-            packetsStrings[fragNo-1] = malloc(sizeof(char)*size);
-            memcpy(packetsStrings[fragNo-1], filedata, sizeof(char)*size);
-
-            // sendto(sock, no, (strlen(no)+1), 0, (struct sockaddr *)&client, sizeof(client));
-            // printf("sent no\n");
+            packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
+            memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
 
             receivedPackets++;
             fileSize += size;
 
-            if (receivedPackets == totalFrag) {
-                FILE* fp = fopen(fileName, "wb");
-                for (int i = 0; i < totalFrag; i++) {
+            if (receivedPackets == totalFrag)
+            {
+                FILE *fp = fopen(fileName, "wb");
+                for (int i = 0; i < totalFrag; i++)
+                {
                     int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
                     fileSize -= wrote;
                     free(packetsStrings[i]);
@@ -167,6 +105,8 @@ int main(int argc, char const *argv[]){
                 packetsAllocated = false;
                 free(packetsStrings);
                 packetsStrings = NULL;
+                sendto(sock, fileSent, (strlen(fileSent) + 1), 0, (struct sockaddr *)&client, sizeof(client));
+                printf("sent file\n");
             }
         }
     }
