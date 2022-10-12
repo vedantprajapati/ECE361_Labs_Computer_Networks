@@ -13,37 +13,42 @@
 #define MAX_PACKET_SIZE 1000
 #define RECV_PACKET_SIZE 1100
 
-struct packet { //packet format: "total_frag:frag_no:size:filename:filedata"
-    unsigned int total_frag; //total number of fragments of the file
-    unsigned int frag_no; //sequence number of fragment
-    unsigned int size; //size of data, range [0,1000]
-    char* filename;
+// packet format: "total_frag:frag_no:size:filename:filedata"
+struct packet
+{                            // packet format: "total_frag:frag_no:size:filename:filedata"
+    unsigned int total_frag; // total number of fragments of the file
+    unsigned int frag_no;    // sequence number of fragment
+    unsigned int size;       // size of data, range [0,1000]
+    char *filename;
     char filedata[MAX_PACKET_SIZE];
 };
 
-int fragment(FILE* file_to_send, char* buf){
+int fragment(FILE *file_to_send, char *buf)
+{
     return fread(buf, sizeof(char), MAX_PACKET_SIZE, file_to_send);
 }
 
-int findSize(char* filename){
-    FILE* fp = fopen(filename, "r");   
+int findSize(char *filename)
+{
+    FILE *fp = fopen(filename, "r");
     fseek(fp, 0L, SEEK_END);
     int res = ftell(fp);
     fclose(fp);
     return res;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
     int sock;
     unsigned int address_size;
     unsigned short port;
     struct sockaddr_in server;
-    char* ftp = "ftp";
+    char *ftp = "ftp";
     char user_input[32];
     int fileFound = 0;
     char dataBuffer[32];
     char *filename;
-    char* binaryString; 
+    char *binaryString;
 
     char *ok = "OK";
     char *done = "DONE";
@@ -61,7 +66,7 @@ int main(int argc, char *argv[]){
     }
     in_addr_t server_addr = inet_addr(argv[1]);
     port = htons(atoi(argv[2]));
-    
+
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     server.sin_family = AF_INET;
@@ -73,26 +78,33 @@ int main(int argc, char *argv[]){
 
     fgets(user_input, 32, stdin);
 
-    user_input[strlen(user_input)-1] = '\0';
+    user_input[strlen(user_input) - 1] = '\0';
 
     filename = strtok(user_input, " ");
 
-    if(strcmp(filename, "ftp") == 0){
+    if (strcmp(filename, "ftp") == 0)
+    {
         filename = strtok(NULL, "\0");
-    }else{
+    }
+    else
+    {
         printf("input needs to be: ftp <filename>\n");
         exit(1);
     }
 
-    if(access(filename, F_OK) == 0){
+    if (access(filename, F_OK) == 0)
+    {
         fileFound = 1;
     }
 
-    if(fileFound){
+    if (fileFound)
+    {
         file_to_send = fopen(filename, "r");
         time(&begin);
-        sendto(sock, ftp, (strlen(ftp)+1), 0, (struct sockaddr *)&server, sizeof(server));
-    }else{
+        sendto(sock, ftp, (strlen(ftp) + 1), 0, (struct sockaddr *)&server, sizeof(server));
+    }
+    else
+    {
         printf("file does not exist\n");
         close(sock);
         return 0;
@@ -100,54 +112,57 @@ int main(int argc, char *argv[]){
 
     address_size = sizeof(server);
 
-    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *) &server, &address_size);
+    recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&server, &address_size);
     time(&end);
     printf("round trip time: %f secondss\n", difftime(end, begin));
 
-    if(strcmp(dataBuffer, "yes") == 0){
+    if (strcmp(dataBuffer, "yes") == 0)
+    {
         printf("A file transfer can start\n");
-    }else{
+    }
+    else
+    {
         printf("received no\n");
         close(sock);
         return 0;
     }
-    
-    
+
     int fileSize = findSize(filename);
-    //get the total number of fragments from the file size + max_packet size -1
-    int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;   
 
+    // get the total number of fragments from the file size + max_packet size -1
+    int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
 
-    char **fragments = malloc(sizeof(char*)*totalFrag);
-    
+    char **fragments = malloc(sizeof(char *) * totalFrag);
+
     int j;
-    for(j = 0; j < totalFrag; j++){
-        fragments[j] = malloc(sizeof(char)*MAX_PACKET_SIZE);
+    for (j = 0; j < totalFrag; j++)
+    {
+        fragments[j] = malloc(sizeof(char) * MAX_PACKET_SIZE);
         fragment(file_to_send, fragments[j]);
     }
 
-    char **packets = malloc(sizeof(char*) * totalFrag);
+    char **packets = malloc(sizeof(char *) * totalFrag);
 
     int n;
-    for(n = 1; n < totalFrag+1; n++){
+    for (n = 1; n < totalFrag + 1; n++)
+    {
         struct packet curPacket;
 
         curPacket.filename = filename;
         curPacket.total_frag = totalFrag;
         curPacket.frag_no = n;
-        if(n != totalFrag){
+        if (n != totalFrag)
+        {
             curPacket.size = MAX_PACKET_SIZE;
-        }else{
+        }
+        else
+        {
             curPacket.size = fileSize % MAX_PACKET_SIZE;
         }
-        //printf("%s", curPacket.filename);
-        //printf("%d", curPacket.frag_no );
-        //printf("%d", totalFrag );
 
+        memset(curPacket.filedata, 0, sizeof(char) * MAX_PACKET_SIZE);
 
-        memset(curPacket.filedata, 0, sizeof(char)*MAX_PACKET_SIZE);
-        
-        packets[n - 1] = malloc(MAX_PACKET_SIZE*sizeof(char));
+        packets[n - 1] = malloc(MAX_PACKET_SIZE * sizeof(char));
         memset(packets[n - 1], 0, MAX_PACKET_SIZE);
         int written = sprintf(packets[n - 1], "%d:%d:%d:%s:", curPacket.total_frag, curPacket.frag_no, curPacket.size, curPacket.filename);
         int packetSize = written + curPacket.size;
@@ -158,15 +173,17 @@ int main(int argc, char *argv[]){
     }
 
     struct packet recvPacket;
+
     memset(recvPacket.filedata,0,sizeof(char)*MAX_PACKET_SIZE);
     // recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
     char ackBuffer[10];
 
     setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, (char*)&ack_timeout, sizeof(ack_timeout));
 
-    for(n = 0; n < totalFrag; n++){
+    for (n = 0; n < totalFrag; n++)
+    {
 
-        sendto(sock, packets[n], (strlen(packets[n])+1), 0, (struct sockaddr *)&server, sizeof(server));
+        sendto(sock, packets[n], (strlen(packets[n]) + 1), 0, (struct sockaddr *)&server, sizeof(server));
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
             printf("timed out\n");
@@ -184,7 +201,7 @@ int main(int argc, char *argv[]){
             return 0;
         }
     }
-    
+
     close(sock);
     return 0;
 }
