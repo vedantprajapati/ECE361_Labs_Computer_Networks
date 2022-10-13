@@ -195,7 +195,7 @@ int main(int argc, char const *argv[]){
             // char *fileName = strtok(NULL, ":");
             // char *filedata = fileName + strlen(fileName) + 1;
 
-            // packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
+            packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
             memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
             receivedPackets++;
             fileSize += size;
