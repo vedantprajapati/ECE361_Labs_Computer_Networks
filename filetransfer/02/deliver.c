@@ -28,11 +28,11 @@ int fragment(FILE *file_to_send, char *buf)
     return fread(buf, sizeof(char), MAX_PACKET_SIZE, file_to_send);
 }
 
-int findSize(char *filename)
+unsigned int findSize(char *filename)
 {
     FILE *fp = fopen(filename, "r");
     fseek(fp, 0L, SEEK_END);
-    int res = ftell(fp);
+    unsigned int res = ftell(fp);
     fclose(fp);
     return res;
 }
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     time_t begin, end;
 
     struct timeval ack_timeout;
-    ack_timeout.tv_sec = 2;
+    ack_timeout.tv_sec = 10;
     ack_timeout.tv_usec = 0;
 
     FILE* file_to_send;
@@ -130,14 +130,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    int fileSize = findSize(filename);
+    unsigned int fileSize = findSize(filename);
 
     // get the total number of fragments from the file size + max_packet size -1
-    int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
+    unsigned int totalFrag = (fileSize + MAX_PACKET_SIZE - 1) / MAX_PACKET_SIZE;
 
     char **fragments = malloc(sizeof(char *) * totalFrag);
 
-    int j;
+    unsigned int j;
     for (j = 0; j < totalFrag; j++)
     {
         fragments[j] = malloc(sizeof(char) * MAX_PACKET_SIZE);
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 
     char **packets = malloc(sizeof(char *) * totalFrag);
 
-    int n;
+    unsigned int n;
     for (n = 1; n < totalFrag + 1; n++)
     {
         struct packet curPacket;
@@ -167,8 +167,8 @@ int main(int argc, char *argv[])
 
         packets[n - 1] = malloc(MAX_PACKET_SIZE * sizeof(char));
         memset(packets[n - 1], 0, MAX_PACKET_SIZE);
-        int written = sprintf(packets[n - 1], "%d:%d:%d:%s:", curPacket.total_frag, curPacket.frag_no, curPacket.size, curPacket.filename);
-        int packetSize = written + curPacket.size;
+        unsigned int written = sprintf(packets[n - 1], "%d:%d:%d:%s:", curPacket.total_frag, curPacket.frag_no, curPacket.size, curPacket.filename);
+        unsigned int packetSize = written + curPacket.size;
         packets[n - 1] = realloc(packets[n - 1], packetSize);
         memcpy(packets[n - 1] + written, fragments[n - 1], curPacket.size);
 

@@ -111,8 +111,8 @@ int main(int argc, char const *argv[]){
 
     char **packetsStrings;
     bool packetsAllocated = false;
-    int receivedPackets = 0;
-    int fileSize = 0;
+    unsigned int receivedPackets = 0;
+    unsigned int fileSize = 0;
     while (1)
     {
         recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&client, &addr_size);
@@ -124,12 +124,11 @@ int main(int argc, char const *argv[]){
             printf("sent yes\n");
         }
         else
-        {
+        {   
             // create empty array of packets if not done yet
-            int totalFrag = atoi(strtok(dataBuffer, ":"));
-
+            unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
             if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
-            {
+            {   
                 //printf("%s\n", dataBuffer);
                 //printf("%d\n", totalFrag);
                 packetsStrings = malloc(sizeof(char *) * totalFrag);
@@ -137,28 +136,26 @@ int main(int argc, char const *argv[]){
             }
 
             // ** FOR SOME
-            int fragNo = atoi(strtok(NULL, ":"));
-
-            printf("got %d\n", fragNo);
-            int size = atoi(strtok(NULL, ":"));
+            unsigned int fragNo = atoi(strtok(NULL, ":"));
+            printf("%d packets received\n", fragNo);
+            unsigned int size = atoi(strtok(NULL, ":"));
             char *fileName = strtok(NULL, ":");
             char *filedata = fileName + strlen(fileName) + 1;
 
             packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
             memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
-
             receivedPackets++;
             fileSize += size;
-
             if (receivedPackets == totalFrag)
-            {
+            {   
                 FILE *fp = fopen(fileName, "wb");
-                for (int i = 0; i < totalFrag; i++)
+                for (unsigned int i = 0; i < totalFrag; i++)
                 {
-                    int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
+                    unsigned int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
                     fileSize -= wrote;
                     free(packetsStrings[i]);
                 }
+
                 fclose(fp);
 
                 receivedPackets = 0;
