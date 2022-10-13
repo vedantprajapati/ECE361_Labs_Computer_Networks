@@ -113,6 +113,14 @@ int main(int argc, char const *argv[]){
     bool packetsAllocated = false;
     unsigned int receivedPackets = 0;
     unsigned int fileSize = 0;
+    char* totalFragString;
+    unsigned int totalFrag;
+    char* fragNoString;
+    unsigned int fragNo;
+    char *fileName;
+    char *filedata;
+    char * sizeString;
+    unsigned int size;
     while (1)
     {
         recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&client, &addr_size);
@@ -126,7 +134,54 @@ int main(int argc, char const *argv[]){
         else
         {   
             // create empty array of packets if not done yet
-            unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
+            // unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
+            unsigned int startIndex=0;
+            int countIndex=0;
+
+            for (unsigned int n = 0; n < sizeof(dataBuffer)/sizeof(char); n++){
+                printf("%c\n",dataBuffer[n]);
+                if (dataBuffer[n] == ':'){
+                    switch(countIndex){
+                        case 0:
+                            totalFragString = malloc(sizeof(char *) * (n-startIndex-1));
+                            memcpy(totalFragString, &dataBuffer[startIndex], sizeof(char) * (n-startIndex-1));
+                            totalFrag = atoi(totalFragString);
+                            countIndex+=1;
+                            startIndex = n+1;
+                            printf("%li\n",totalFrag);
+                            break;
+                        case 1:
+                            fragNoString = malloc(sizeof(char *) * (n-startIndex-1));
+                            memcpy(fragNoString, &dataBuffer[startIndex], sizeof(char) * (n-startIndex-1));
+                            fragNo = atoi(fragNoString);
+                            countIndex+=1;
+                            startIndex = n+1;
+                            break;
+                        case 2:
+                            sizeString = malloc(sizeof(char *) * (n-startIndex-1));
+                            memcpy(sizeString, &dataBuffer[startIndex], sizeof(char) * (n-startIndex-1));
+                            size = atoi(sizeString);
+                            countIndex+=1;
+                            startIndex = n+1;
+                            break;
+                        case 3:
+                            fileName = malloc(sizeof(char *) * (n-startIndex-1));
+                            memcpy(fileName, &dataBuffer[startIndex], sizeof(char) * (n-startIndex-1));
+                            countIndex+=1;
+                            startIndex = n+1;
+                            break;
+                        case 4:
+                            filedata = malloc(sizeof(char *) * size);
+                            memcpy(filedata, &dataBuffer[startIndex], sizeof(char) * ((sizeof(dataBuffer)/sizeof(char*))-startIndex-1));
+                            countIndex+=1;
+                            startIndex = n+1;
+                            break;
+                        default:
+                            printf("couldnt find match");
+                            break;
+                    }
+                }
+            }
             if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
             {   
                 //printf("%s\n", dataBuffer);
@@ -135,17 +190,17 @@ int main(int argc, char const *argv[]){
                 packetsAllocated = true;
             }
 
-            // ** FOR SOME
-            unsigned int fragNo = atoi(strtok(NULL, ":"));
-            printf("%d packets received\n", fragNo);
-            unsigned int size = atoi(strtok(NULL, ":"));
-            char *fileName = strtok(NULL, ":");
-            char *filedata = fileName + strlen(fileName) + 1;
+            // // ** FOR SOME
+            // unsigned int fragNo = atoi(strtok(NULL, ":"));
+            // printf("%d packets received\n", fragNo);
+            // unsigned int size = atoi(strtok(NULL, ":"));
+            // char *fileName = strtok(NULL, ":");
+            // char *filedata = fileName + strlen(fileName) + 1;
 
-            packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
-            memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
-            receivedPackets++;
-            fileSize += size;
+            // packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
+            // memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
+            // receivedPackets++;
+            // fileSize += size;
             if (receivedPackets == totalFrag)
             {   
                 printf("all packets received\n");
