@@ -125,6 +125,7 @@ int main(int argc, char const *argv[]){
         }
         else
         {   
+            printf("%s",dataBuffer);
             // create empty array of packets if not done yet
             unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
             if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
@@ -140,7 +141,7 @@ int main(int argc, char const *argv[]){
             printf("%d packets received\n", fragNo);
             unsigned int size = atoi(strtok(NULL, ":"));
             char *fileName = strtok(NULL, ":");
-            char *filedata = fileName + strlen(fileName) + 1;
+            char *filedata = fileName + sizeof(&fileName)/sizeof(char) + 1;
 
             packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
             memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);

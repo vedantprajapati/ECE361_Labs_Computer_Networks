@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     char *ok = "OK";
     char *done = "DONE";
 
-    time_t begin, end;
+    clock_t begin, end;
 
     struct timeval ack_timeout;
     ack_timeout.tv_sec = 10;
@@ -182,10 +182,10 @@ int main(int argc, char *argv[])
     char ackBuffer[10];
 
     
-    time(&begin);
+    
     for (n = 0; n < totalFrag; n++)
     {
-
+        begin = clock();
         sendto(sock, packets[n], (strlen(packets[n]) + 1), 0, (struct sockaddr *)&server, sizeof(server));
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
@@ -196,11 +196,12 @@ int main(int argc, char *argv[])
 
         if(strcmp(ackBuffer, "OK") == 0){
             printf("%d/%d packets sent successfully\n", n+1, totalFrag);
+            end = clock();
+            double rtt = (double) (end - begin) / CLOCKS_PER_SEC;
+            printf("round trip time: %f seconds\n", rtt);
         }else if(strcmp(ackBuffer, "DONE") == 0){
             printf("%d/%d packets sent successfully\n", n+1, totalFrag);
             printf("finished sending packets\n");
-            time(&end);
-            printf("round trip time: %f seconds\n", difftime(end, begin));
         }else{
             printf("acknowledgement error\n");
             close(sock);
