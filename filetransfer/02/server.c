@@ -133,6 +133,7 @@ int main(int argc, char const *argv[]){
         }
         else
         {   
+            printf("%s",dataBuffer);
             // create empty array of packets if not done yet
             // unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
             unsigned int startIndex=0;
