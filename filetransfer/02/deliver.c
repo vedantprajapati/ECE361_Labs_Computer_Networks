@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
             printf("%d/%d packets sent successfully\n", n+1, totalFrag);
             printf("finished sending packets\n");
             time(&end);
-            printf("round trip time: %f secondss\n", difftime(end, begin));
+            printf("round trip time: %f seconds\n", difftime(end, begin));
         }else{
             printf("acknowledgement error\n");
             close(sock);

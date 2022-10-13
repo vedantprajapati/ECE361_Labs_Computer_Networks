@@ -148,6 +148,7 @@ int main(int argc, char const *argv[]){
             fileSize += size;
             if (receivedPackets == totalFrag)
             {   
+                printf("all packets received\n");
                 FILE *fp = fopen(fileName, "wb");
                 for (unsigned int i = 0; i < totalFrag; i++)
                 {
@@ -158,6 +159,7 @@ int main(int argc, char const *argv[]){
 
                 fclose(fp);
 
+                printf("%s created\n", fileName);
                 receivedPackets = 0;
                 fileSize = 0;
                 packetsAllocated = false;
