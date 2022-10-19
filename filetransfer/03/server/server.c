@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #define BUFFER_SIZE 32
 #define RECV_PACKET_SIZE 1100
@@ -16,12 +17,18 @@
 
 
 
+double uniform_rand(){
+    return (double) rand() / (double)((unsigned) RAND_MAX+1);
+}
+
 int main(int argc, char const *argv[]){
     
     if(argc != 2){
         printf("usage: server <udp listen port>\n");
         exit(0);
     }
+
+    srand(time(NULL));
 
     char *ip = "127.0.0.1";
     int port = atoi(argv[1]);
@@ -66,57 +73,61 @@ int main(int argc, char const *argv[]){
         }
         else
         {   
-            printf("buffer: %s\n",dataBuffer);
+            if(uniform_rand() > 1e-2){
+                printf("buffer: %s\n",dataBuffer);
 
-            // create empty array of packets if not done yet
-            unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
-            if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
-            {   
-                //printf("%s\n", dataBuffer);
-                //printf("%d\n", totalFrag);
-                packetsStrings = malloc(sizeof(char *) * totalFrag);
-                packetsAllocated = true;
-            }
-
-            // ** FOR SOME
-            unsigned int fragNo = atoi(strtok(NULL, ":"));
-            printf("%d packets received\n", fragNo);
-            unsigned int size = atoi(strtok(NULL, ":"));
-            char *fileName = strtok(NULL, ":");
-            char *filedata = fileName + strlen(fileName) + 1;
-            printf("fragno: %d\n",fragNo);
-            printf("size: %d\n",size);
-            printf("filename: %s\n",fileName);
-            printf("filedata: %ld\n", received - (int) (filedata - dataBuffer));
-
-            packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
-            memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
-            receivedPackets++;
-            fileSize += size;
-            if (receivedPackets == totalFrag)
-            {   
-                printf("all packets received\n");
-                FILE *fp = fopen(fileName, "wb");
-                for (unsigned int i = 0; i < totalFrag; i++)
-                {
-                    unsigned int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
-                    fileSize -= wrote;
-                    free(packetsStrings[i]);
+                // create empty array of packets if not done yet
+                unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
+                if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
+                {   
+                    //printf("%s\n", dataBuffer);
+                    //printf("%d\n", totalFrag);
+                    packetsStrings = malloc(sizeof(char *) * totalFrag);
+                    packetsAllocated = true;
                 }
 
-                fclose(fp);
+                // ** FOR SOME
+                unsigned int fragNo = atoi(strtok(NULL, ":"));
+                printf("%d packets received\n", fragNo);
+                unsigned int size = atoi(strtok(NULL, ":"));
+                char *fileName = strtok(NULL, ":");
+                char *filedata = fileName + strlen(fileName) + 1;
+                printf("fragno: %d\n",fragNo);
+                printf("size: %d\n",size);
+                printf("filename: %s\n",fileName);
+                printf("filedata: %ld\n", received - (int) (filedata - dataBuffer));
 
-                printf("%s created\n", fileName);
-                receivedPackets = 0;
-                fileSize = 0;
-                packetsAllocated = false;
-                free(packetsStrings);
-                packetsStrings = NULL;
-                sendto(sock, done, (strlen(done)+1), 0, (struct sockaddr *)&client, sizeof(client));
+                packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
+                memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
+                receivedPackets++;
+                fileSize += size;
+                if (receivedPackets == totalFrag)
+                {   
+                    printf("all packets received\n");
+                    FILE *fp = fopen(fileName, "wb");
+                    for (unsigned int i = 0; i < totalFrag; i++)
+                    {
+                        unsigned int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
+                        fileSize -= wrote;
+                        free(packetsStrings[i]);
+                    }
+
+                    fclose(fp);
+
+                    printf("%s created\n", fileName);
+                    receivedPackets = 0;
+                    fileSize = 0;
+                    packetsAllocated = false;
+                    free(packetsStrings);
+                    packetsStrings = NULL;
+                    sendto(sock, done, (strlen(done)+1), 0, (struct sockaddr *)&client, sizeof(client));
+                }else{
+                    sendto(sock, ok, (strlen(ok)+1), 0, (struct sockaddr *)&client, sizeof(client));
+                    //sendto(sock, fileSent, (strlen(fileSent) + 1), 0, (struct sockaddr *)&client, sizeof(client));
+                    //printf("sent file\n");
+                }
             }else{
-                sendto(sock, ok, (strlen(ok)+1), 0, (struct sockaddr *)&client, sizeof(client));
-                //sendto(sock, fileSent, (strlen(fileSent) + 1), 0, (struct sockaddr *)&client, sizeof(client));
-                //printf("sent file\n");
+                printf("packet dropped\n");
             }
         }
     }
