@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     clock_t begin, end;
     struct timeval ack_timeout;
-    ack_timeout.tv_sec = 10;
+    ack_timeout.tv_sec = 3;
     ack_timeout.tv_usec = 0;
 
     FILE* file_to_send;

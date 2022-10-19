@@ -74,7 +74,7 @@ int main(int argc, char const *argv[]){
         else
         {   
             if(uniform_rand() > 1e-2){
-                printf("buffer: %s\n",dataBuffer);
+                //printf("buffer: %s\n",dataBuffer);
 
                 // create empty array of packets if not done yet
                 unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
@@ -92,10 +92,10 @@ int main(int argc, char const *argv[]){
                 unsigned int size = atoi(strtok(NULL, ":"));
                 char *fileName = strtok(NULL, ":");
                 char *filedata = fileName + strlen(fileName) + 1;
-                printf("fragno: %d\n",fragNo);
-                printf("size: %d\n",size);
-                printf("filename: %s\n",fileName);
-                printf("filedata: %ld\n", received - (int) (filedata - dataBuffer));
+                // printf("fragno: %d\n",fragNo);
+                // printf("size: %d\n",size);
+                // printf("filename: %s\n",fileName);
+                // printf("filedata: %ld\n", received - (int) (filedata - dataBuffer));
 
                 packetsStrings[fragNo - 1] = malloc(sizeof(char) * size);
                 memcpy(packetsStrings[fragNo - 1], filedata, sizeof(char) * size);
