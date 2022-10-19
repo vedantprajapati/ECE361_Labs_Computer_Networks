@@ -206,8 +206,12 @@ int main(int argc, char *argv[])
                 printf("%d/%d packets sent successfully\n", n+1, totalFrag);
                 end = clock();
                 rtt = (double) (end - begin) / CLOCKS_PER_SEC;
-
                 printf("round trip time: %f seconds\n", rtt);
+
+                if(n == 0){
+                    ack_timeout.tv_sec = (int)(rtt < 0 ? (rtt - 0.5) : (rtt + 0.5));
+                    ack_timeout.tv_usec = (int)((rtt - ack_timeout.tv_sec)*1000000);
+                }
             }else if(strcmp(ackBuffer, "DONE") == 0){
                 printf("%d/%d packets sent successfully\n", n+1, totalFrag);
                 printf("finished sending packets\n");
