@@ -13,6 +13,7 @@
 
 #define MAX_PACKET_SIZE 1000
 #define RECV_PACKET_SIZE 1100
+#define MAX_ATTEMPTS 3
 
 // packet format: "total_frag:frag_no:size:filename:filedata"
 struct packet
@@ -56,6 +57,7 @@ int main(int argc, char *argv[])
 
     double rtt;
     bool timeout = false;
+    int attempts = 0;
 
     clock_t begin, end;
     struct timeval ack_timeout;
@@ -198,10 +200,18 @@ int main(int argc, char *argv[])
         sendto(sock, packets[n], packetSizes[n], 0, (struct sockaddr *)&server, sizeof(server));
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
-            timeout = true;
-            n--;
+            if(attempts < MAX_ATTEMPTS){
+                timeout = true;
+                n--;
+                attempts++;
+            }else{
+                printf("max attempts reached\n");
+                exit(3);
+            }
+            
         }else{
             timeout = false;
+            attempts = 0;
             if(strcmp(ackBuffer, "OK") == 0){
                 printf("%d/%d packets sent successfully\n", n+1, totalFrag);
                 end = clock();

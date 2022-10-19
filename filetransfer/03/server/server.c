@@ -105,13 +105,16 @@ int main(int argc, char const *argv[]){
                 {   
                     printf("all packets received\n");
                     FILE *fp = fopen(fileName, "wb");
+                    //printf("total frag: %d\n",totalFrag);
                     for (unsigned int i = 0; i < totalFrag; i++)
                     {
+                        //printf("frag: %d\n",i);
                         unsigned int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
                         fileSize -= wrote;
                         free(packetsStrings[i]);
+                        //printf("freed\n");
                     }
-
+                    
                     fclose(fp);
 
                     printf("%s created\n", fileName);
