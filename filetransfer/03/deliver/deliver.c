@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <time.h>
 #include <math.h>
+#include <stdbool.h>
 
 #define MAX_PACKET_SIZE 1000
 #define RECV_PACKET_SIZE 1100
@@ -52,6 +53,9 @@ int main(int argc, char *argv[])
 
     char *ok = "OK";
     char *done = "DONE";
+
+    double rtt;
+    bool timeout = false;
 
     clock_t begin, end;
     struct timeval ack_timeout;
@@ -186,26 +190,32 @@ int main(int argc, char *argv[])
     for (n = 0; n < totalFrag; n++)
     {
         begin = clock();
+
+        if(timeout){
+            printf("retransmitting %d packet\n",n+1);
+        }
+
         sendto(sock, packets[n], packetSizes[n], 0, (struct sockaddr *)&server, sizeof(server));
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
-            printf("no response from sever\n");
-            close(sock);
-            return 0;
-        }
-
-        if(strcmp(ackBuffer, "OK") == 0){
-            printf("%d/%d packets sent successfully\n", n+1, totalFrag);
-            end = clock();
-            double rtt = (double) (end - begin) / CLOCKS_PER_SEC;
-            printf("round trip time: %f seconds\n", rtt);
-        }else if(strcmp(ackBuffer, "DONE") == 0){
-            printf("%d/%d packets sent successfully\n", n+1, totalFrag);
-            printf("finished sending packets\n");
+            timeout = true;
+            n--;
         }else{
-            printf("acknowledgement error\n");
-            close(sock);
-            return 0;
+            timeout = false;
+            if(strcmp(ackBuffer, "OK") == 0){
+                printf("%d/%d packets sent successfully\n", n+1, totalFrag);
+                end = clock();
+                rtt = (double) (end - begin) / CLOCKS_PER_SEC;
+
+                printf("round trip time: %f seconds\n", rtt);
+            }else if(strcmp(ackBuffer, "DONE") == 0){
+                printf("%d/%d packets sent successfully\n", n+1, totalFrag);
+                printf("finished sending packets\n");
+            }else{
+                printf("acknowledgement error\n");
+                close(sock);
+                return 0;
+            }
         }
     }
 
