@@ -201,6 +201,7 @@ int main(int argc, char *argv[])
         
         if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
             if(attempts < MAX_ATTEMPTS){
+                printf("timed out\n");
                 timeout = true;
                 n--;
                 attempts++;
