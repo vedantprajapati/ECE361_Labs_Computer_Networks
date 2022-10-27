@@ -15,15 +15,16 @@
 #define MAX_PACKET_SIZE 1000
 #define MIN(a, b) (a > b ? b : a)
 
-
-
-double uniform_rand(){
-    return (double) rand() / (double)((unsigned) RAND_MAX+1);
+double uniform_rand()
+{
+    return (double)rand() / (double)((unsigned)RAND_MAX + 1);
 }
 
-int main(int argc, char const *argv[]){
-    
-    if(argc != 2){
+int main(int argc, char const *argv[])
+{
+
+    if (argc != 2)
+    {
         printf("usage: server <udp listen port>\n");
         exit(0);
     }
@@ -43,7 +44,7 @@ int main(int argc, char const *argv[]){
     char *yes = "yes";
     char *ok = "OK";
     char *done = "DONE";
-    
+
     sock = socket(AF_INET, SOCK_DGRAM, 0);
 
     server.sin_family = AF_INET;
@@ -63,7 +64,6 @@ int main(int argc, char const *argv[]){
     while (1)
     {
         int received = recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&client, &addr_size);
-        
 
         if (strcmp(dataBuffer, ftp) == 0)
         {
@@ -72,16 +72,17 @@ int main(int argc, char const *argv[]){
             printf("sent yes\n");
         }
         else
-        {   
-            if(uniform_rand() > 1e-2){
-                //printf("buffer: %s\n",dataBuffer);
+        {
+            if (uniform_rand() > 1e-2)
+            {
+                // printf("buffer: %s\n",dataBuffer);
 
                 // create empty array of packets if not done yet
                 unsigned int totalFrag = atoi(strtok(dataBuffer, ":"));
                 if (!packetsAllocated && strcmp(dataBuffer, ftp) != 0)
-                {   
-                    //printf("%s\n", dataBuffer);
-                    //printf("%d\n", totalFrag);
+                {
+                    // printf("%s\n", dataBuffer);
+                    // printf("%d\n", totalFrag);
                     packetsStrings = malloc(sizeof(char *) * totalFrag);
                     packetsAllocated = true;
                 }
@@ -102,19 +103,19 @@ int main(int argc, char const *argv[]){
                 receivedPackets++;
                 fileSize += size;
                 if (receivedPackets == totalFrag)
-                {   
+                {
                     printf("all packets received\n");
                     FILE *fp = fopen(fileName, "wb");
-                    //printf("total frag: %d\n",totalFrag);
+                    // printf("total frag: %d\n",totalFrag);
                     for (unsigned int i = 0; i < totalFrag; i++)
                     {
-                        //printf("frag: %d\n",i);
+                        // printf("frag: %d\n",i);
                         unsigned int wrote = fwrite(packetsStrings[i], 1, MIN(fileSize, MAX_PACKET_SIZE), fp);
                         fileSize -= wrote;
                         free(packetsStrings[i]);
-                        //printf("freed\n");
+                        // printf("freed\n");
                     }
-                    
+
                     fclose(fp);
 
                     printf("%s created\n", fileName);
@@ -123,13 +124,17 @@ int main(int argc, char const *argv[]){
                     packetsAllocated = false;
                     free(packetsStrings);
                     packetsStrings = NULL;
-                    sendto(sock, done, (strlen(done)+1), 0, (struct sockaddr *)&client, sizeof(client));
-                }else{
-                    sendto(sock, ok, (strlen(ok)+1), 0, (struct sockaddr *)&client, sizeof(client));
-                    //sendto(sock, fileSent, (strlen(fileSent) + 1), 0, (struct sockaddr *)&client, sizeof(client));
-                    //printf("sent file\n");
+                    sendto(sock, done, (strlen(done) + 1), 0, (struct sockaddr *)&client, sizeof(client));
                 }
-            }else{
+                else
+                {
+                    sendto(sock, ok, (strlen(ok) + 1), 0, (struct sockaddr *)&client, sizeof(client));
+                    // sendto(sock, fileSent, (strlen(fileSent) + 1), 0, (struct sockaddr *)&client, sizeof(client));
+                    // printf("sent file\n");
+                }
+            }
+            else
+            {
                 printf("packet dropped\n");
             }
         }

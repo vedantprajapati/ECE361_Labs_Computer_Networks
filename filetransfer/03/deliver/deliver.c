@@ -64,8 +64,9 @@ int main(int argc, char *argv[])
     ack_timeout.tv_sec = 3;
     ack_timeout.tv_usec = 0;
 
-    FILE* file_to_send;
-    if(argc != 3){
+    FILE *file_to_send;
+    if (argc != 3)
+    {
         printf("usage: deliver <server address> <server port number>\n");
         exit(0);
     }
@@ -115,14 +116,14 @@ int main(int argc, char *argv[])
     }
 
     address_size = sizeof(server);
-    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, (char*)&ack_timeout, sizeof(ack_timeout));
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&ack_timeout, sizeof(ack_timeout));
 
-    if(recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&server, &address_size) == -1){
+    if (recvfrom(sock, dataBuffer, sizeof(dataBuffer), 0, (struct sockaddr *)&server, &address_size) == -1)
+    {
         printf("no response from sever\n");
         close(sock);
         return 0;
     }
-    
 
     if (strcmp(dataBuffer, "yes") == 0)
     {
@@ -184,49 +185,60 @@ int main(int argc, char *argv[])
 
     struct packet recvPacket;
 
-    memset(recvPacket.filedata,0,sizeof(char)*MAX_PACKET_SIZE);
+    memset(recvPacket.filedata, 0, sizeof(char) * MAX_PACKET_SIZE);
     // recvPacket.filedata = malloc(sizeof(char)*MAX_PACKET_SIZE);
     char ackBuffer[10];
 
-    
     for (n = 0; n < totalFrag; n++)
     {
         begin = clock();
 
-        if(timeout){
-            printf("retransmitting %d packet\n",n+1);
+        if (timeout)
+        {
+            printf("retransmitting %d packet\n", n + 1);
         }
 
         sendto(sock, packets[n], packetSizes[n], 0, (struct sockaddr *)&server, sizeof(server));
-        
-        if(recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *) &server, &address_size) == -1){
-            if(attempts < MAX_ATTEMPTS){
+
+        if (recvfrom(sock, ackBuffer, sizeof(ackBuffer), 0, (struct sockaddr *)&server, &address_size) == -1)
+        {
+            if (attempts < MAX_ATTEMPTS)
+            {
                 printf("timed out\n");
                 timeout = true;
                 n--;
                 attempts++;
-            }else{
+            }
+            else
+            {
                 printf("max attempts reached\n");
                 exit(3);
             }
-            
-        }else{
+        }
+        else
+        {
             timeout = false;
             attempts = 0;
-            if(strcmp(ackBuffer, "OK") == 0){
-                printf("%d/%d packets sent successfully\n", n+1, totalFrag);
+            if (strcmp(ackBuffer, "OK") == 0)
+            {
+                printf("%d/%d packets sent successfully\n", n + 1, totalFrag);
                 end = clock();
-                rtt = (double) (end - begin) / CLOCKS_PER_SEC;
+                rtt = (double)(end - begin) / CLOCKS_PER_SEC;
                 printf("round trip time: %f seconds\n", rtt);
 
-                if(n == 0){
+                if (n == 0)
+                {
                     ack_timeout.tv_sec = (int)(rtt < 0 ? (rtt - 0.5) : (rtt + 0.5));
-                    ack_timeout.tv_usec = (int)((rtt - ack_timeout.tv_sec)*1000000);
+                    ack_timeout.tv_usec = (int)((rtt - ack_timeout.tv_sec) * 1000000);
                 }
-            }else if(strcmp(ackBuffer, "DONE") == 0){
-                printf("%d/%d packets sent successfully\n", n+1, totalFrag);
+            }
+            else if (strcmp(ackBuffer, "DONE") == 0)
+            {
+                printf("%d/%d packets sent successfully\n", n + 1, totalFrag);
                 printf("finished sending packets\n");
-            }else{
+            }
+            else
+            {
                 printf("acknowledgement error\n");
                 close(sock);
                 return 0;
