@@ -51,12 +51,12 @@ void textApp(int connfd){
                     token = strtok(NULL, input_buffer);
                     break;
                 case 2:
-                    strcpy(recvd_packet.source,token);
+                    strlcpy(recvd_packet.source,token,MAX_NAME);
                     i++;
                     token = strtok(NULL, input_buffer);
                     break;
                 case 3:
-                    strcpy(recvd_packet.data,token);
+                    strlcpy(recvd_packet.data,token,MAX_DATA);
                     token = strtok(NULL, input_buffer);
                     break;
                 default:
