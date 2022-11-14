@@ -27,9 +27,12 @@ struct message
 
 void textApp(int sockfd){
     char input_buffer[BUFFER_SIZE];
+    printf("connection successful\n");
+    printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n \\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
+
     while(1){
         bzero(input_buffer, BUFFER_SIZE);
-        
+
     }
 }
 
