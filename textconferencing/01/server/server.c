@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include "user.h"
 
 #define MAX_DATA 1000
 #define MAX_NAME 12
@@ -25,6 +26,17 @@ struct message
 };
 
 typedef struct message Message;
+
+struct user users[10] = {{.username="user1", .password="pass1", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user2", .password="pass2", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user3", .password="pass3", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user4", .password="pass4", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user5", .password="pass5", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user6", .password="pass6", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user7", .password="pass7", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user8", .password="pass8", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user9", .password="pass9", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
+                         {.username="user10", .password="pass10", .active=false, .ip=NULL, .port=NULL, .session_id=NULL}};
 
 void login(int connfd, Message* recvd_packet){
     bool auth = false;
@@ -46,7 +58,7 @@ void login(int connfd, Message* recvd_packet){
 
     write(connfd, packet, sizeof(packet));
 }
-
+                         
 void textApp(int connfd){
     char input_buffer[BUFFER_SIZE];
     struct message recvd_packet;
