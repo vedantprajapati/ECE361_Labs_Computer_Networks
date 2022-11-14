@@ -44,7 +44,10 @@ void login(int connfd, Message* recvd_packet){
     for(int i = 0; i < NUM_OF_USERS; i++){
         if(strcmp(users[i].username, recvd_packet->source) == 0 && strcmp(users[i].password,recvd_packet->data)==0){
             auth = true;
-            logged_in = users[i].active;
+            if(!users[i].active){
+                logged_in = true;
+                users[i].active = true;
+            }
         }
     }
     char *packet;
@@ -109,7 +112,7 @@ void textApp(int connfd){
 
         switch(recvd_packet.type){
             case 0:
-                login(connfd);
+                login(connfd, &recvd_packet);
             case 1://exit
             case 2://join
             case 3://leave_session
