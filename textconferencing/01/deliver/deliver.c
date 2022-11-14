@@ -99,7 +99,7 @@ void login(){
             printf("invalid command\n");
         }
     }
-    int sockfd, conn;
+    int sockfd;
     struct sockaddr_in serv_addr, client;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -116,6 +116,8 @@ void login(){
         printf("connection error\n");
         exit(0);
     }
+
+
 
     textApp(sockfd);
 

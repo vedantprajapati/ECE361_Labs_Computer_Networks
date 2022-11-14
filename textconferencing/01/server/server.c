@@ -14,6 +14,7 @@
 #define MAX_NAME 12
 #define BUFFER_SIZE 1024
 #define BACKLOG 3
+#define NUM_OF_USERS 2
 //packet format = type:size:source:data
 struct message
 {                       
@@ -23,9 +24,33 @@ struct message
     unsigned char data[MAX_DATA];
 };
 
+typedef struct message Message;
+
+void login(int connfd, Message* recvd_packet){
+    bool auth = false;
+    bool logged_in = false;
+    for(int i = 0; i < NUM_OF_USERS; i++){
+        if(strcmp(users[i].username, recvd_packet->source) == 0 && strcmp(users[i].password,recvd_packet->data)==0){
+            auth = true;
+            logged_in = users[i].active;
+        }
+    }
+    char *packet;
+    if(auth && !logged_in){
+        packet = "1:0:server:";
+    }else if(!auth){
+        packet = "2:0:server:incorrect username or password";
+    }else{
+        packet = "2:0:server:user already logged in";
+    }
+
+    write(connfd, packet, sizeof(packet));
+}
+
 void textApp(int connfd){
     char input_buffer[BUFFER_SIZE];
     struct message recvd_packet;
+    int conn_fd = connfd;
     while(1){
         bzero(input_buffer, BUFFER_SIZE);
 
@@ -71,7 +96,8 @@ void textApp(int connfd){
         }
 
         switch(recvd_packet.type){
-            case 0://login
+            case 0:
+                login(connfd);
             case 1://exit
             case 2://join
             case 3://leave_session
