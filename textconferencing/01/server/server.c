@@ -77,16 +77,56 @@ void exit_func(){
 
 }
 
-void join(){
+void join(Message recvd_packet){
+
+    int i=0;
+    char *curr_username = recvd_packet.source;
+    while(sessions[i]) {
+        if(strcmp(sessions[i], recvd_packet.data) == 0) {
+            //session already exists
+            for (int i = 0; i < 10; i++){
+                if (strcmp(users[i].username, curr_username) == 0 && users[i].active == true){
+                    users[i].session_id = recvd_packet.data;
+                    break;
+                }
+            }
+            printf("user %s has left session %s", curr_username, recvd_packet.data);
+        }
+        i++;
+    }
 
 }
 
-void leave_session(){
+void leave_session(Message recvd_packet){
 
+    char *curr_username = recvd_packet.source;
+    for (int i = 0; i < 10; i++){
+        if (strcmp(users[i].username, curr_username) == 0 && users[i].active == true){
+            users[i].session_id = NULL;
+            break;
+        }
+    }
+    printf("user %s has left session %s", curr_username, recvd_packet.data);
 }
 
-void new_session(){
+void new_session(Message recvd_packet){
 
+    int i =0;
+    char *session_id=recvd_packet.data;
+    if(sessions == NULL){
+        sessions = malloc(session_count * sizeof(char*));
+    }
+    while(sessions[i]) {
+        if(strcmp(sessions[i], session_id) == 0) {
+            //session already exists
+            printf('session already exists');                        
+            exit(0);
+        }
+        i++;
+    }
+    sessions[i] = malloc((strlen(recvd_packet.data)+1) * sizeof(char));
+    strcpy(sessions[i], recvd_packet.data);
+    session_count++;
 }
 
 void message(){
@@ -159,47 +199,14 @@ void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len)
                 exit_func();
                 break;
             case 2://join
-                curr_username = recvd_packet.source;
-                while(sessions[i]) {
-                    if(strcmp(sessions[i], recvd_packet.data) == 0) {
-                        //session already exists
-                        for (int i = 0; i < 10; i++){
-                            if (strcmp(users[i].username, curr_username) == 0 && users[i].active == true){
-                                users[i].session_id = recvd_packet.data;
-                                break;
-                            }
-                        }
-                        printf("user %s has left session %s", curr_username, recvd_packet.data);
-                    }
-                    i++;
-                }
-
+                join(recvd_packet);
+                break;
             case 3://leave_session
-                curr_username = recvd_packet.source;
-                for (int i = 0; i < 10; i++){
-                    if (strcmp(users[i].username, curr_username) == 0 && users[i].active == true){
-                        users[i].session_id = NULL;
-                        break;
-                    }
-                }
-                printf("user %s has left session %s", curr_username, recvd_packet.data);
+                leave_session(recvd_packet);
+                break;
             case 4://new_session
-                h = 0;
-                char *session_id=recvd_packet.data;
-                if(sessions == NULL){
-                    sessions = malloc(session_count * sizeof(char*));
-                }
-                while(sessions[h]) {
-                    if(strcmp(sessions[h], session_id) == 0) {
-                        //session already exists
-                        printf('session already exists');                        
-                        exit(0);
-                    }
-                    h++;
-                }
-                sessions[h] = malloc((strlen(recvd_packet.data)+1) * sizeof(char)); // yeah, I know sizeof(char) is 1, but to make it clear...
-                strcpy(sessions[h], recvd_packet.data);
-                session_count++;
+                new_session(recvd_packet);
+                break;
             case 5://message
                 message();
                 break;
