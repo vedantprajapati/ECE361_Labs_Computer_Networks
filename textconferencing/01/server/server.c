@@ -16,7 +16,9 @@
 #define BUFFER_SIZE 1024
 #define BACKLOG 3
 #define NUM_OF_USERS 2
-//packet format = type:size:source:data
+
+#define SA struct sockaddr
+// //packet format = type:size:source:data
 struct message
 {                       
     unsigned int type; 
@@ -38,24 +40,92 @@ struct user users[10] = {{.username="user1", .password="pass1", .active=false, .
                          {.username="user9", .password="pass9", .active=false, .ip=NULL, .port=NULL, .session_id=NULL},
                          {.username="user10", .password="pass10", .active=false, .ip=NULL, .port=NULL, .session_id=NULL}};
 
-void login(int connfd, Message* recvd_packet){
+void process_input(char* input_buffer, Message* packet){
+    printf(input_buffer);
+    char *token = strtok(input_buffer, ":");
+    int i = 0;
+    while(token != NULL){
+        switch(i){
+            case 0:
+                packet->type = atoi(token);
+                token = strtok(NULL,":");
+                i++;
+                break;
+            case 1:
+                packet->size = atoi(token);
+                token = strtok(NULL,":");
+                i++;
+                break;
+            case 2:
+                strcpy(packet->source, token);
+                token = strtok(NULL,":");
+                i++;
+                break;
+            case 3:
+                strcpy(packet->data, token);
+                token = strtok(NULL,":");
+                i++;
+                break;
+            default:
+                printf("invalid packet - too many arguements\n");
+                exit(0);
+        }
+    }
+}
+
+void exit_func(){
+
+}
+
+void join(){
+
+}
+
+void leave_session(){
+
+}
+
+void new_session(){
+
+}
+
+void message(){
+
+}
+
+void query(){
+
+}
+
+void login(int connfd){
+    char input_buffer[BUFFER_SIZE];
+    Message recvd_packet;
+
+    read(connfd, input_buffer, BUFFER_SIZE);
+
+    process_input(input_buffer, &recvd_packet);
+
     bool auth = false;
     bool logged_in = false;
     for(int i = 0; i < NUM_OF_USERS; i++){
-        if(strcmp(users[i].username, recvd_packet->source) == 0 && strcmp(users[i].password,recvd_packet->data)==0){
+        if(strcmp(users[i].username, recvd_packet.source) == 0 && strcmp(users[i].password,recvd_packet.data)==0){
             auth = true;
             if(!users[i].active){
-                logged_in = true;
                 users[i].active = true;
+                printf("match correct\n");
+            }else{
+                logged_in = true;
             }
         }
     }
     char *packet;
     if(auth && !logged_in){
-        packet = "1:0:server:";
+        packet = "1:0:server:ok";
     }else if(!auth){
+        printf("auth false");
         packet = "2:0:server:incorrect username or password";
     }else{
+        printf("already logged");
         packet = "2:0:server:user already logged in";
     }
 
@@ -111,19 +181,27 @@ void textApp(int connfd){
         }
 
         switch(recvd_packet.type){
-            case 0:
-                login(connfd, &recvd_packet);
             case 1://exit
+                exit_func();
+                break;
             case 2://join
+                join();
+                break;
             case 3://leave_session
+                leave_session();
+                break;
             case 4://new_session
+                new_session();
+                break;
             case 5://message
+                message();
+                break;
             case 6://query
+                query();
+                break;
             default:
-                printf("unknown type error\n");
-                exit(0);
+                printf("invalid type \n");
         }
-
     }
     close(connfd);
 }
@@ -146,20 +224,27 @@ int main(int argc, char const *argv[])
     if(sockfd < 0){
         printf("socket creation error\n");
         exit(0);
+    }else{
+        printf("socket creation successful\n");
     }
+    bzero(&serv_addr, sizeof(serv_addr));
 
-    serv_addr.sin_family = AF_INET6;
-    serv_addr.sin_addr.s_addr = INADDR_ANY; //constant used to store any IP address assigned to server
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY); //constant used to store any IP address assigned to server
     serv_addr.sin_port = htons(port);
 
     if(bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
         printf("bind error\n");
         exit(0);
-    };
+    }else{
+        printf("binding successful\n");
+    }
 
     if(listen(sockfd, BACKLOG) != 0){
         printf("listen error\n");
         exit(0);
+    }else{
+        printf("listen successful\n");
     }
 
     len = sizeof(cli_addr);
@@ -168,9 +253,11 @@ int main(int argc, char const *argv[])
     if(connfd < 0){
         printf("accept error\n");
         exit(0);
+    }else{
+        printf("accepted successfully\n");
     }
 
-    textApp(connfd);
+    login(connfd);
 
     close(sockfd);
     return 0;

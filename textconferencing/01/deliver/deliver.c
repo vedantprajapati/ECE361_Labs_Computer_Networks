@@ -10,12 +10,17 @@
 #include <time.h>
 #include <math.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #define MAX_DATA 1000
 #define MAX_NAME 12
 #define MAX_PASSWORD 16
 #define BUFFER_SIZE 1024
+#define PORT 8080
 
+#define SA struct sockaddr
+
+void textApp(int sockfd);
 
 struct message
 {                       
@@ -28,77 +33,63 @@ struct message
 typedef struct message Message;
 
 void process_input(char* input_buffer, Message* packet){
-    char *token = strtok(input_buffer, " ");
+    //printf(input_buffer);
+    char *token = strtok(input_buffer, ":");
     int i = 0;
     while(token != NULL){
         switch(i){
             case 0:
-                packet->type = token;
+                packet->type = atoi(token);
+                token = strtok(NULL,":");
                 i++;
-                token = strtok(NULL, input_buffer);
                 break;
             case 1:
                 packet->size = atoi(token);
+                token = strtok(NULL,":");
                 i++;
-                token = strtok(NULL, input_buffer);
                 break;
             case 2:
-                strlcpy(packet->source,token,MAX_NAME);
+                strcpy(packet->source, token);
+                token = strtok(NULL,":");
                 i++;
-                token = strtok(NULL, input_buffer);
                 break;
             case 3:
-                strlcpy(packet->data,token,MAX_DATA);
-                token = strtok(NULL, input_buffer);
+                strcpy(packet->data, token);
+                token = strtok(NULL,":");
+                i++;
                 break;
             default:
-                printf("packet format error - too many segments\n");
+                printf("invalid packet - too many arguements\n");
                 exit(0);
         }
-    }
-    if(i != 3){
-            printf("packet format error - too few segments\n");
-            exit(0);
     }
 }
 
 void login(){
     char input_buffer[BUFFER_SIZE];
-    bool invalid_login = true;
-    char* client_id, password, ip, port;
+    char recv_buff[BUFFER_SIZE];
+    bool invalid_command = true;
+    char* client_id = NULL;
+    char* password = NULL;
+    char* ip = NULL;
+    char* port = NULL;
 
-    while(true){
+    while(invalid_command){
         printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n");
         fgets(input_buffer, BUFFER_SIZE, stdin);
 
         char* token = strtok(input_buffer, " ");
         if(strcmp(token, "\\login")==0){
-            int i = 0;
-            while(token != NULL){
-                if(i == 0){
-                    strlcpy(client_id, token, strlen(token));
-                }else if(i == 1){
-                    strlcpy(password, token, strlen(token));
-                }else if(i == 2){
-                    strlcpy(ip, token, strlen(token));
-                }else if(i == 3){
-                    strlcpy(port, token, strlen(token));
-                }else{
-                    printf("invalid command\n");
-                    continue;
-                }
-                token = strtok(input_buffer, " ");
-                i++;
-            }
-            if(i == 4){
-                invalid_login = false;
-            }else{
-                printf("invalid command\n");
-            }
+            client_id = strtok(NULL, " ");
+            password = strtok(NULL, " ");
+            ip = strtok(NULL, " ");
+            port = strtok(NULL, " ");
+            invalid_command = false;
         }else{
             printf("invalid command\n");
         }
     }
+
     int sockfd;
     struct sockaddr_in serv_addr, client;
 
@@ -110,32 +101,52 @@ void login(){
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = inet_addr(ip);
-    serv_addr.sin_port = htons(port);
+    serv_addr.sin_port = htons(atoi(port));
 
     if(connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
         printf("connection error\n");
         exit(0);
     }
 
+    char* packet[MAX_DATA];
+    strcpy(packet, "0:0:");
+    strcat(packet,client_id);
+    strcat(packet,":");
+    strcat(packet,password);
+    //printf("%s",packet);
 
+    write(sockfd, packet, sizeof(packet));
+    read(sockfd, recv_buff, BUFFER_SIZE);
 
-    textApp(sockfd);
+    Message recvd_packet;
+    process_input(recv_buff, &recvd_packet);
 
-    close(sockfd);
+    if(recvd_packet.type == 1){
+        textApp(sockfd);
+        close(sockfd);
+    }else if(recvd_packet.type == 2){
+        printf("login failure: %s\n",recvd_packet.data);
+        login();
+    }else{
+        printf("login error\n");
+        exit(0);
+    }
+    
 }
 
 void textApp(int sockfd){
     char input_buffer[BUFFER_SIZE];
-    printf("connection successful\n");
+    printf("log in successful\n \n");
 
-    login(sockfd);
-    printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n\\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
+
+    printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n \\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
 
     while(1){
         bzero(input_buffer, BUFFER_SIZE);
 
     }
 }
+
 
 int main(int argc, char *argv[])
 {
