@@ -41,7 +41,7 @@ struct user users[10] = {{.username="user1", .password="pass1", .active=false, .
                          {.username="user10", .password="pass10", .active=false, .ip=NULL, .port=NULL, .session_id=NULL}};
 
 void process_input(char* input_buffer, Message* packet){
-    printf(input_buffer);
+    //printf("%s",input_buffer);
     char *token = strtok(input_buffer, ":");
     int i = 0;
     while(token != NULL){
@@ -182,13 +182,14 @@ void textApp(int connfd){
             printf("packet format error - too few segments\n");
             exit(0);
         }
-
+        char *curr_username;
+        int h = 0;
         switch(recvd_packet.type){
             case 1://exit
                 exit_func();
                 break;
             case 2://join
-                char *curr_username = recvd_packet.source;
+                curr_username = recvd_packet.source;
                 while(sessions[i]) {
                     if(strcmp(sessions[i], recvd_packet.data) == 0) {
                         //session already exists
@@ -204,7 +205,7 @@ void textApp(int connfd){
                 }
 
             case 3://leave_session
-                char *curr_username = recvd_packet.source;
+                curr_username = recvd_packet.source;
                 for (int i = 0; i < 10; i++){
                     if (strcmp(users[i].username, curr_username) == 0 && users[i].active == true){
                         users[i].session_id = NULL;
@@ -213,21 +214,21 @@ void textApp(int connfd){
                 }
                 printf("user %s has left session %s", curr_username, recvd_packet.data);
             case 4://new_session
-                int i =0;
+                h = 0;
                 char *session_id=recvd_packet.data;
                 if(sessions == NULL){
                     sessions = malloc(session_count * sizeof(char*));
                 }
-                while(sessions[i]) {
-                    if(strcmp(sessions[i], session_id) == 0) {
+                while(sessions[h]) {
+                    if(strcmp(sessions[h], session_id) == 0) {
                         //session already exists
                         printf('session already exists');                        
                         exit(0);
                     }
-                    i++;
+                    h++;
                 }
-                sessions[i] = malloc((strlen(recvd_packet.data)+1) * sizeof(char)); // yeah, I know sizeof(char) is 1, but to make it clear...
-                strcpy(sessions[i], recvd_packet.data);
+                sessions[h] = malloc((strlen(recvd_packet.data)+1) * sizeof(char)); // yeah, I know sizeof(char) is 1, but to make it clear...
+                strcpy(sessions[h], recvd_packet.data);
                 session_count++;
             case 5://message
                 message();
