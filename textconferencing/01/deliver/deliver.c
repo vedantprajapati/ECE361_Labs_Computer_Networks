@@ -120,6 +120,7 @@ void login(){
 
     Message recvd_packet;
     process_input(recv_buff, &recvd_packet);
+    printf("%s\n",recv_buff);
 
     if(recvd_packet.type == 1){
         textApp(sockfd);
@@ -139,7 +140,7 @@ void textApp(int sockfd){
     printf("log in successful\n \n");
 
 
-    printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n \\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
+    printf("available commands:\n \\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
 
     while(1){
         bzero(input_buffer, BUFFER_SIZE);

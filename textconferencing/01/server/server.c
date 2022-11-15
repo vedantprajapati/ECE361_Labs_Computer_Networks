@@ -15,7 +15,7 @@
 #define MAX_NAME 12
 #define BUFFER_SIZE 1024
 #define BACKLOG 3
-#define NUM_OF_USERS 2
+#define NUM_OF_USERS 10
 
 #define SA struct sockaddr
 // //packet format = type:size:source:data
@@ -97,18 +97,11 @@ void query(){
 
 }
 
-void login(int connfd){
-    char input_buffer[BUFFER_SIZE];
-    Message recvd_packet;
-
-    read(connfd, input_buffer, BUFFER_SIZE);
-
-    process_input(input_buffer, &recvd_packet);
-
+void login(int connfd, char* username, char* password){
     bool auth = false;
     bool logged_in = false;
     for(int i = 0; i < NUM_OF_USERS; i++){
-        if(strcmp(users[i].username, recvd_packet.source) == 0 && strcmp(users[i].password,recvd_packet.data)==0){
+        if(strcmp(users[i].username, username) == 0 && strcmp(users[i].password,password)==0){
             auth = true;
             if(!users[i].active){
                 users[i].active = true;
@@ -120,25 +113,28 @@ void login(int connfd){
     }
     char *packet;
     if(auth && !logged_in){
+        printf("creds ok\n");
         packet = "1:0:server:ok";
     }else if(!auth){
-        printf("auth false");
+        printf("auth false\n");
         packet = "2:0:server:incorrect username or password";
     }else{
-        printf("already logged");
+        printf("already logged\n");
         packet = "2:0:server:user already logged in";
     }
 
+    printf("%s\n",packet);
     write(connfd, packet, sizeof(packet));
+    return;
 }
                          
 char **sessions;
 int session_count = 0;
 
-void textApp(int connfd){
+void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len){
     char input_buffer[BUFFER_SIZE];
-    struct message recvd_packet;
-    int conn_fd = connfd;
+    Message recvd_packet;
+
     while(1){
         bzero(input_buffer, BUFFER_SIZE);
 
@@ -146,45 +142,19 @@ void textApp(int connfd){
             printf("read error\n");
             exit(0);
         }
+        printf("%s\n",input_buffer);
         
-        printf("%s",input_buffer);
-        int i = 0;
-        char *token = strtok(input_buffer, ":");
+        process_input(input_buffer, &recvd_packet);
+        
+        printf("type: %d\n size: %d\n source: %s\n data: %s\n", recvd_packet.type, recvd_packet.size, recvd_packet.source, recvd_packet.data);
 
-        while(token != NULL){
-            switch(i){
-                case 0:
-                    recvd_packet.type = token;
-                    i++;
-                    token = strtok(NULL, input_buffer);
-                    break;
-                case 1:
-                    recvd_packet.size = atoi(token);
-                    i++;
-                    token = strtok(NULL, input_buffer);
-                    break;
-                case 2:
-                    strlcpy(recvd_packet.source,token,MAX_NAME);
-                    i++;
-                    token = strtok(NULL, input_buffer);
-                    break;
-                case 3:
-                    strlcpy(recvd_packet.data,token,MAX_DATA);
-                    token = strtok(NULL, input_buffer);
-                    break;
-                default:
-                    printf("packet format error - too many segments\n");
-                    exit(0);
-            }
-        }
-
-        if(i != 3){
-            printf("packet format error - too few segments\n");
-            exit(0);
-        }
         char *curr_username;
         int h = 0;
+        int i = 0;
         switch(recvd_packet.type){
+            case 0:
+                login(connfd, recvd_packet.source, recvd_packet.data);
+                break;
             case 1://exit
                 exit_func();
                 break;
@@ -239,6 +209,8 @@ void textApp(int connfd){
             default:
                 printf("invalid type \n");
         }
+
+        connfd = accept(sockfd, (struct sockaddr *)&cli_addr, &len);
     }
     close(connfd);
 }
@@ -293,8 +265,7 @@ int main(int argc, char const *argv[])
     }else{
         printf("accepted successfully\n");
     }
-
-    login(connfd);
+    textApp(connfd, sockfd, cli_addr, len);
 
     close(sockfd);
     return 0;
