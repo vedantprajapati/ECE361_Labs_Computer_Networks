@@ -16,7 +16,7 @@ void convert_client_input_to_packet(char* client_input, struct message *msg){
     strcpy((char* )msg->source, packet_source);
 
 	char * packet_data = strtok(NULL, ":");
-    strcpy((char* )msg->data, packet_data)
+    strcpy((char* )msg->data, packet_data);
 
 }
 
@@ -148,7 +148,7 @@ struct sessions* add_session(struct sessions_list *sessions, char* session_name)
 	    return new_head;
 	}
 	else{
-        sessions->session = id;
+        sessions->session = new_head;
         sessions->next = NULL;
 		return new_head;
 	}
