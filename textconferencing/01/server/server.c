@@ -16,8 +16,8 @@
 #define BUFFER_SIZE 1024
 #define BACKLOG 3
 // #define NUM_OF_USERS 10
-struct user_list *users;
-struct sessions_list *sessions;
+struct users *users;
+struct sessions *sessions;
 int session_count = 0;
 
 #define SA struct sockaddr
@@ -36,8 +36,7 @@ void join(struct message *recvd_packet)
     int i = 0;
     char *curr_username = recvd_packet->source;
     char *curr_session = recvd_packet->data;
-
-    struct user *user = lookup_user(users, curr_username);
+    struct user *user = lookup_user_name(users, curr_username);
     struct session *user_session = lookup_session(sessions, user->session_id);
     struct session *session = lookup_session(sessions, curr_session);
 

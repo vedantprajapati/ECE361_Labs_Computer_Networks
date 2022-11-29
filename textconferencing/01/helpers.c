@@ -80,7 +80,7 @@ struct user* lookup_user_creds(char* usr_name, char* database){
 	char * client[32];
 	char * client_pass[32];
 
-	File *fp = fopen(database, "r");
+	FILE *fp = fopen(database, "r");
 
 	if (fp == NULL){
 		printf("Error opening file\n");
@@ -167,8 +167,6 @@ struct session* lookup_session(struct sessions * sessions, char* id){
 }
 
 bool add_user_to_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user){
-	struct session *session = lookup_session(sessions, session->id);
-	struct user *user = lookup_user_name(users, user->username);
 	if (user == NULL ){
 		printf("user not found\n");
 		return false;
@@ -190,8 +188,7 @@ bool add_user_to_session(struct users *users, struct sessions *sessions, struct 
 }
 
 bool rm_user_from_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user){
-	struct session *session = lookup_session(sessions, session->id);
-	struct user *user = lookup_user_name(users, user->username);
+
 	if (session == NULL){
 		printf("session not found\n");
 		return false;

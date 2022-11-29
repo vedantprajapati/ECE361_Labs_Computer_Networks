@@ -27,7 +27,7 @@ struct packet
     unsigned int frag_no;    // sequence number of fragment
     unsigned int size;       // size of data, range [0,1000]
     char *filename;
-    char filedata[MAX_PACKET_SIZE];
+    char filedata[1048];
 };
 
 struct session
