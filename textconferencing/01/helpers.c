@@ -25,12 +25,12 @@ void display_packet(struct message *msg){
 }
 
 
-struct user* lookup_user_name(struct users *user, char* name){
-	while (user != NULL){
-		if (strcmp(user->user->username, name) == 0){
-			return user;
+struct user* lookup_user_name(struct users *users, char* name){
+	while (users != NULL){
+		if (strcmp(users->user->username, name) == 0){
+			return users->user;
 		}
-		user = user->next;
+		users = users->next;
 	}
 	return NULL;
 }
@@ -111,9 +111,9 @@ struct user* lookup_user_creds(char* usr_name, char* database){
 }
 
 
-void rm_session(struct sessions_list * sessions, struct sessions *session){
-	struct sessions_list * past = NULL;
-	struct sessions_list * ptr = sessions;
+void rm_session(struct sessions * sessions, struct session *session){
+	struct sessions * past = NULL;
+	struct sessions * ptr = sessions;
 	while (ptr != NULL){
 		if (strcmp(ptr->session->id, session->id) == 0){
 			if (past == NULL){
@@ -134,15 +134,15 @@ void rm_session(struct sessions_list * sessions, struct sessions *session){
 	}
 }
 
-struct sessions* add_session(struct sessions_list *sessions, char* session_name){
+struct session* add_session(struct sessions *sessions, char* session_name){
 	struct sessions * new_head = malloc(sizeof(struct sessions));
 
-    strcpy(new_head->id, session_name);
+    strcpy(new_head->session->id, session_name);
 
-    new_head->activeUsers = 1;
+    new_head->session->activeUsers = 1;
 
 	if(sessions){
-		struct sessions_list * past = sessions;
+		struct sessions * past = sessions;
 		sessions->session = new_head;
 		sessions->next = past;
 	    return new_head;
@@ -154,10 +154,10 @@ struct sessions* add_session(struct sessions_list *sessions, char* session_name)
 	}
 }
 
-struct sessions* lookup_session(struct sessions_list * sessions, char* session){
-	struct sessions_list * session_ptr = sessions;
+struct session* lookup_session(struct sessions * sessions, char* id){
+	struct sessions * session_ptr = sessions;
 	while (session_ptr != NULL){
-		if (strcmp(session_ptr->session->id, session) == 0){
+		if (strcmp(session_ptr->session->id, id) == 0){
 			return session_ptr->session;
 		}
 		else{
@@ -166,8 +166,8 @@ struct sessions* lookup_session(struct sessions_list * sessions, char* session){
 	}
 }
 
-bool add_user_to_session(struct users *users, struct sessions_list *sessions, struct sessions *session, struct user *user){
-	struct sessions *session = lookup_session(sessions, session->id);
+bool add_user_to_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user){
+	struct session *session = lookup_session(sessions, session->id);
 	struct user *user = lookup_user_name(users, user->username);
 	if (user == NULL ){
 		printf("user not found\n");
@@ -189,8 +189,8 @@ bool add_user_to_session(struct users *users, struct sessions_list *sessions, st
 	}
 }
 
-bool rm_user_from_session(struct users *users, struct sessions_list *sessions, struct sessions *session, struct user *user){
-	struct sessions *session = lookup_session(sessions, session->id);
+bool rm_user_from_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user){
+	struct session *session = lookup_session(sessions, session->id);
 	struct user *user = lookup_user_name(users, user->username);
 	if (session == NULL){
 		printf("session not found\n");

@@ -10,20 +10,13 @@
 #include <time.h>
 #include <math.h>
 #include <stdbool.h>
-
+#include "../helpers.h"
 #define MAX_PACKET_SIZE 1000
 #define RECV_PACKET_SIZE 1100
 #define MAX_ATTEMPTS 3
 
 // packet format: "total_frag:frag_no:size:filename:filedata"
-struct packet
-{                            // packet format: "total_frag:frag_no:size:filename:filedata"
-    unsigned int total_frag; // total number of fragments of the file
-    unsigned int frag_no;    // sequence number of fragment
-    unsigned int size;       // size of data, range [0,1000]
-    char *filename;
-    char filedata[MAX_PACKET_SIZE];
-};
+
 
 int fragment(FILE *file_to_send, char *buf)
 {

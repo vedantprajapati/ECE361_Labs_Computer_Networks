@@ -5,37 +5,51 @@
 #include <string.h>
 #include <stdbool.h>
 
-struct message {
+struct message
+{
     int type;
     int size;
     unsigned source[32];
     unsigned data[1048];
 };
 
-struct user {
+struct user
+{
     char username[32];
     char password[32];
     char session_id[32];
     int sock_fd;
 };
 
-struct sessions{
+struct packet
+{                            // packet format: "total_frag:frag_no:size:filename:filedata"
+    unsigned int total_frag; // total number of fragments of the file
+    unsigned int frag_no;    // sequence number of fragment
+    unsigned int size;       // size of data, range [0,1000]
+    char *filename;
+    char filedata[MAX_PACKET_SIZE];
+};
+
+struct session
+{
     char id[32];
     int activeUsers;
 };
 
-struct sessions_list{
-    struct sessions *session;
-    struct sessions_list *next;
+struct sessions
+{
+    struct session *session;
+    struct sessions *next;
 };
 
-
-struct users{
+struct users
+{
     struct user *user;
     struct users *next;
 };
 
-enum types {
+enum types
+{
     LOGIN,
     LO_ACK,
     LO_NAK,
@@ -51,27 +65,35 @@ enum types {
     QU_ACK
 };
 
-void convert_str_to_packet(char* str, struct message *message);
+// create a packet from a message by the client
+void convert_client_input_to_packet(char *str, struct message *message);
 
+// display a packet as a string
 void display_packet(struct message *message);
 
-struct user* lookup_user_name(struct users *user, char* name);
+// check if user is in the list of users
+struct user *lookup_user_name(struct users *user, char *name);
 
+// add user to currently logged in users
 void add_user_id(struct users *users, struct user *new_user);
 
-void rm_user_id(struct users *users, char* name);
+// remove user with name from currently logged in users
+void rm_user_id(struct users *users, char *name);
 
-struct user* lookup_user_creds(char* usr_name, char* file_name);
+// check database for corresponding user
+struct user *lookup_user_creds(char *usr_name, char *file_name);
 
-struct sessions* lookup_session(struct sessions_list * sessions, char* session);
+// find session by id
+struct session *lookup_session(struct sessions *sessions, char *id);
 
-void rm_session(struct sessions_list * sessions, struct sessions *session);
+// remove session from sessions
+void rm_session(struct sessions *sessions, struct session *session);
 
 // add a new session to head of current sessions list
-struct sessions* add_session(struct sessions_list *s_list, char* session_name);
+struct session *add_session(struct sessions *sessions, char *session_name);
 
-bool add_user_to_session(struct users *users, struct sessions_list *sessions, struct sessions *session, struct user *user);
+bool add_user_to_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user);
 
-bool rm_user_from_session(struct users *users, struct sessions_list *sessions, struct sessions *session, struct user *user);
+bool rm_user_from_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user);
 
 #endif /* HELPERS_H */
