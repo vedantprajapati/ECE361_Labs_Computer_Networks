@@ -19,6 +19,7 @@
 struct users *users;
 struct sessions *sessions;
 int session_count = 0;
+char buffer[BUFFER_SIZE];
 
 #define SA struct sockaddr
 
@@ -94,17 +95,21 @@ void new_session(struct message *recvd_packet)
     char *curr_session = recvd_packet->data;
 
     struct session *session = lookup_session(sessions, curr_session);
-    if (session != NULL){
+    if (session != NULL)
+    {
         printf("Session %s already exists\n", curr_session);
         return;
     }
-    else{
+    else
+    {
 
         bool session_created = add_session(sessions, curr_session);
-        if (session_created){
+        if (session_created)
+        {
             printf("Session %s has been created\n", curr_session);
         }
-        else{
+        else
+        {
             printf("Session %s could not be created\n", curr_session);
         }
         return;
@@ -112,12 +117,60 @@ void new_session(struct message *recvd_packet)
     session_count++;
 }
 
-void send_message()
+void send_message(int connfd, struct message* recvd_packet)
 {
+    char *curr_username = recvd_packet->source;
+    struct user *user = lookup_user_name(users, curr_username);\
+    char * text = recvd_packet->data;
+    char * user_session = user->session_id;
+
+    if(!user){
+        text = "User not online";
+        display_message(buffer, JN_NAK, strlen(text), "client", text);
+    }
+    else{
+        display_message(buffer, JN_NAK, strlen(text), "client", text);
+    }
+
+    char * text = "Hello from server";
+    display_message(buffer, LO_NAK, strlen(text), "client", text);
+    write(connfd, buffer, strlen(buffer));
+    while(users != NULL){
+        if(strcmp(users->user->session_id, user_session) == 0){
+            ssize_t sent = write(users->user->connfd, buffer, strlen(buffer));
+            if (sent == -1) {
+                printf("Error sending message to user %s\n", users->user->username);
+                exit(1);
+            }
+        }
+        users = users->next;
+    }
 }
 
-void query()
+void query(int connfd)
 {
+    char text[BUFFER_SIZE];
+
+    strcat(text, "The following users are online: ");
+    while(users != NULL){
+        strcat(text, users->user->username);
+        strcat(text, ", ");
+        users = users->next;
+    }
+
+    strcat(text, "\nThe following sessions are active: ");
+    while(sessions != NULL){
+        strcat(text, sessions->session->id);
+        strcat(text, ", ");
+        sessions = sessions->next;
+    }
+    display_message(buffer, QU_ACK, strlen(text), "client", text);
+    if (write(connfd, buffer, strlen(buffer)) == -1) {
+        printf("Error sending message to user %s\n", users->user->username);
+        exit(1);
+    }
+
+
 }
 
 void login(int connfd, struct message *recvd_packet)

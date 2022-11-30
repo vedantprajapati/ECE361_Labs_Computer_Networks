@@ -3,5 +3,8 @@
         "in.h": "c",
         "inet.h": "c",
         "helpers.h": "c"
+    },
+    "workbench.colorCustomizations": {
+        "sash.hoverBorder": "#6800b5"
     }
 }

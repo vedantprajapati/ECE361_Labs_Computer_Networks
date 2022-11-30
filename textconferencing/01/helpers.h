@@ -71,6 +71,9 @@ void convert_client_input_to_packet(char *str, struct message *message);
 // display a packet as a string
 void display_packet(struct message *message);
 
+//convert the packet to a string to be sent to the reciever
+void display_message(char *buffer, long int type, int length, char *sender, char *text);
+
 // check if user is in the list of users
 struct user *lookup_user_name(struct users *user, char *name);
 
