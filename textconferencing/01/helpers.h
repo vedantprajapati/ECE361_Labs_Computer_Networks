@@ -44,8 +44,9 @@ struct sessions
 
 struct users
 {
-    struct user *user;
-    struct users *next;
+    struct user *array;
+    size_t len;
+    size_t capacity;
 };
 
 enum types

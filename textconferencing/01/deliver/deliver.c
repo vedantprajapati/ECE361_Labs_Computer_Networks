@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#include "../helpers.h"
+
 #define MAX_DATA 1000
 #define MAX_NAME 12
 #define MAX_PASSWORD 16
@@ -20,15 +22,7 @@
 
 #define SA struct sockaddr
 
-void textApp(int sockfd);
-
-struct message
-{
-    unsigned int type;
-    unsigned int size;
-    unsigned char source[MAX_NAME];
-    unsigned char data[MAX_DATA];
-};
+void textApp(int sockfd, char *client_id);
 
 typedef struct message Message;
 
@@ -80,11 +74,11 @@ void login()
 
     while (invalid_command)
     {
-        printf("available commands:\n \\login <client ID> <password> <server-IP> <server-port>\n");
+        printf("available commands:\n /login <client ID> <password> <server-IP> <server-port>\n");
         fgets(input_buffer, BUFFER_SIZE, stdin);
 
         char *token = strtok(input_buffer, " ");
-        if (strcmp(token, "\\login") == 0)
+        if (strcmp(token, "/login") == 0)
         {
             client_id = strtok(NULL, " ");
             password = strtok(NULL, " ");
@@ -125,7 +119,7 @@ void login()
     strcat(packet, password);
     // printf("%s",packet);
 
-    write(sockfd, packet, sizeof(packet));
+    write(sockfd, packet, strlen(packet));
     read(sockfd, recv_buff, BUFFER_SIZE);
 
     Message recvd_packet;
@@ -134,7 +128,7 @@ void login()
 
     if (recvd_packet.type == 1)
     {
-        textApp(sockfd);
+        textApp(sockfd, client_id);
         close(sockfd);
     }
     else if (recvd_packet.type == 2)
@@ -149,16 +143,87 @@ void login()
     }
 }
 
-void textApp(int sockfd)
+#define HELP_LOGOUT   " /logout\n"
+#define HELP_JOIN     " /joinsession <session ID>\n"
+#define HELP_LEAVE    " /leavesession\n"
+#define HELP_CREATE   " /createsession <session ID>\n"
+#define HELP_LIST     " /list\n"
+#define HELP_QUIT     " /quit\n"
+
+void textApp(int sockfd, char *client_id)
 {
     char input_buffer[BUFFER_SIZE];
+    size_t read_bytes;
+    char server_buffer[BUFFER_SIZE];
     printf("log in successful\n \n");
 
-    printf("available commands:\n \\logout\n \\joinsession <session ID> \n \\leavesession \n \\createsession <session ID> \n \\list \n \\quit \n <text>\n");
+    printf("available commands:\n" HELP_LOGOUT HELP_JOIN HELP_LEAVE HELP_CREATE HELP_LIST HELP_QUIT);
 
     while (1)
     {
         bzero(input_buffer, BUFFER_SIZE);
+        fgets(input_buffer, BUFFER_SIZE, stdin);
+
+        char *command = strtok(input_buffer, " ");
+        if (strcmp(command, "/logout") == 0)
+        {
+            display_message(server_buffer, EXIT, 0, client_id, "");
+            write(sockfd, server_buffer, strlen(server_buffer));
+        }
+        else if (strcmp(command, "/joinsession") == 0)
+        {
+            char *session_id = strtok(NULL, " ");
+            if (session_id == NULL)
+            {
+                printf("usage: " HELP_JOIN);
+                continue;
+            }
+
+            display_message(server_buffer, JOIN, strlen(session_id), client_id, session_id);
+            write(sockfd, server_buffer, strlen(server_buffer));
+
+            read_bytes = read(sockfd, server_buffer, BUFFER_SIZE);
+
+            struct message ack; 
+            convert_client_input_to_packet(server_buffer, &ack);
+            if (ack.type == JN_ACK)
+            {
+                if (strcmp(ack.data, session_id) == 0)
+                    printf("joined %s\n", session_id);
+                else
+                    printf("the server was bad (we joined %s)\n", session_id);
+            }
+            else
+            {
+                printf("failed to join %s\n", ack.data);
+            }
+        }
+        else if (strcmp(command, "/leavesession") == 0)
+        {
+            display_message(server_buffer, LEAVE_SESS, 0, client_id, "");
+        }
+        else if (strcmp(command, "/createsession") == 0)
+        {
+            char *session_id = strtok(NULL, " ");
+            if (session_id == NULL)
+            {
+                printf("usage: " HELP_CREATE);
+                continue;
+            }
+
+            display_message(server_buffer, NEW_SESS, strlen(session_id), client_id, session_id);
+            write(sockfd, server_buffer, strlen(server_buffer));
+
+            /* read_bytes = read(sockfd, server_buffer, BUFFER_SIZE); */
+        }
+        else if (strcmp(command, "/list") == 0)
+        {
+
+        }
+        else if (strcmp(command, "/quit") == 0)
+        {
+
+        }
     }
 }
 

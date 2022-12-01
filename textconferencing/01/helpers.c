@@ -31,66 +31,45 @@ void display_message(char *buffer, long int type, int length, char *sender, char
 
 struct user *lookup_user_name(struct users *users, char *name)
 {
-	while (users != NULL)
+	for (size_t i = 0; i < users->len; i++)
 	{
-		if (strcmp(users->user->username, name) == 0)
+		if (strcmp(users->array[i].username, name) == 0)
 		{
-			return users->user;
+			return &users->array[i];
 		}
-		users = users->next;
 	}
 	return NULL;
 }
 
 void add_user_id(struct users *users, struct user *new_user)
 {
-	if (users)
+	if (users->len == users->capacity)
 	{
-		struct users *temp = users;
-		users->user = new_user;
-		users->next = temp;
+		users->capacity *= 2;
+		users->array = realloc(users->array, users->capacity * sizeof(struct user));
 	}
-	else
-	{
-		users->user = new_user;
-	}
+	users->array[users->len++] = *new_user;
 }
 
-// removes all occurrences of a user from the list
 void rm_user_id(struct users *users, char *name)
 {
-
-	struct users *past = NULL;
-	if (users)
+	size_t i = 0;
+	for (; i < users->len; i++)
 	{
-		struct users *ptr = users;
-		while (ptr != NULL)
+		if (strcmp(users->array[i].username, name) == 0)
 		{
-			if (strcmp(ptr->user->username, name) == 0)
-			{
-				if (past == NULL)
-				{
-					users = ptr->next;
-					free(ptr);
-					ptr = users;
-				}
-				else
-				{
-					past->next = ptr->next;
-					free(ptr);
-					ptr = past->next;
-				}
-			}
-			else
-			{
-				past = ptr;
-				ptr = ptr->next;
-			}
+			break;
 		}
 	}
-	else
+
+	if (i == users->len)
 	{
 		return;
+	}
+
+	for (size_t j = i + 1; j < users->len; j++)
+	{
+		memcpy(&users->array[j - 1], &users->array[j], sizeof(struct user));
 	}
 }
 
