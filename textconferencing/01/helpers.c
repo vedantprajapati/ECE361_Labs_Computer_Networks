@@ -21,12 +21,12 @@ void convert_client_input_to_packet(char *client_input, struct message *msg)
 
 void display_packet(struct message *msg)
 {
-	printf("msg->type: %d, msg->size: %d, msg->source: %ls, msg->data: %ls\n", msg->type, msg->size, msg->source, msg->data);
+	printf("msg->type: %d, msg->size: %d, msg->source: %s, msg->data: %s\n", msg->type, msg->size, msg->source, msg->data);
 }
 
 void display_message(char *buffer, long int type, int length, char *sender, char *text)
 {
-	sprintf(buffer, "%d:%ld:%s:%s", type, length, sender, text);
+	sprintf(buffer, "%ld:%d:%s:%s", type, length, sender, text);
 }
 
 struct user *lookup_user_name(struct users *users, char *name)
@@ -96,8 +96,8 @@ void rm_user_id(struct users *users, char *name)
 
 struct user *lookup_user_creds(char *usr_name, char *database)
 {
-	char *client[32];
-	char *client_pass[32];
+	char client[32];
+	char client_pass[32];
 
 	FILE *fp = fopen(database, "r");
 
@@ -165,23 +165,23 @@ void rm_session(struct sessions *sessions, struct session *session)
 struct session *add_session(struct sessions *sessions, char *session_name)
 {
 	struct sessions *new_head = malloc(sizeof(struct sessions));
-
+	struct session *new_session = malloc(sizeof(struct session));
+	new_head->session = new_session;
 	strcpy(new_head->session->id, session_name);
-
 	new_head->session->activeUsers = 1;
 
 	if (sessions)
 	{
 		struct sessions *past = sessions;
-		sessions->session = new_head;
+		sessions->session = new_head->session;
 		sessions->next = past;
-		return new_head;
+		return new_head->session;
 	}
 	else
 	{
-		sessions->session = new_head;
+		sessions->session = new_head->session;
 		sessions->next = NULL;
-		return new_head;
+		return new_head->session;
 	}
 }
 
@@ -199,6 +199,7 @@ struct session *lookup_session(struct sessions *sessions, char *id)
 			session_ptr = session_ptr->next;
 		}
 	}
+	return NULL;
 }
 
 bool add_user_to_session(struct users *users, struct sessions *sessions, struct session *session, struct user *user)

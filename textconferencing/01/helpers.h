@@ -9,8 +9,8 @@ struct message
 {
     int type;
     int size;
-    unsigned source[32];
-    unsigned data[1048];
+    char source[32];
+    char data[1048];
 };
 
 struct user

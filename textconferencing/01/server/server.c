@@ -26,7 +26,7 @@ char buffer[BUFFER_SIZE];
 void exit_func(struct message *recvd_packet)
 {
     printf("Exiting instance of server\n");
-    char *username = strtok((char *)recvd_packet->source, " ");
+    char *username = strtok(recvd_packet->source, " ");
     rm_user_id(users, username);
     printf("User %s has been removed from the list of logged in users\n", username);
 }
@@ -34,7 +34,6 @@ void exit_func(struct message *recvd_packet)
 void join(struct message *recvd_packet)
 {
 
-    int i = 0;
     char *curr_username = recvd_packet->source;
     char *curr_session = recvd_packet->data;
     struct user *user = lookup_user_name(users, curr_username);
@@ -73,9 +72,9 @@ void leave_session(struct message *recvd_packet)
 
     char *curr_username = recvd_packet->source;
     char *curr_session = recvd_packet->data;
-    struct session *session = lookup_session(sessions, session->id);
+    struct session *session = lookup_session(sessions, curr_session);
     struct user *user = lookup_user_name(users, curr_username);
-    bool user_removed = rm_user_from_session(sessions, users, session, user);
+    bool user_removed = rm_user_from_session(users, sessions, session, user);
 
     if (user_removed)
     {
@@ -91,7 +90,7 @@ void leave_session(struct message *recvd_packet)
 void new_session(struct message *recvd_packet)
 {
 
-    char *curr_username = recvd_packet->source;
+    // char *curr_username = recvd_packet->source;
     char *curr_session = recvd_packet->data;
 
     struct session *session = lookup_session(sessions, curr_session);
@@ -117,69 +116,73 @@ void new_session(struct message *recvd_packet)
     session_count++;
 }
 
-void send_message(int connfd, struct message* recvd_packet)
+void send_message(int connfd, struct message *recvd_packet)
 {
     char *curr_username = recvd_packet->source;
-    struct user *user = lookup_user_name(users, curr_username);\
-    char * text = recvd_packet->data;
-    char * user_session = user->session_id;
+    struct user *user = lookup_user_name(users, curr_username);
+    char *text = recvd_packet->data;
+    char *user_session = user->session_id;
 
-    if(!user){
+    if (!user)
+    {
         text = "User not online";
         display_message(buffer, JN_NAK, strlen(text), "client", text);
     }
-    else{
+    else
+    {
         display_message(buffer, JN_NAK, strlen(text), "client", text);
     }
 
-    char * text = "Hello from server";
     display_message(buffer, LO_NAK, strlen(text), "client", text);
-    write(connfd, buffer, strlen(buffer));
-    while(users != NULL){
-        if(strcmp(users->user->session_id, user_session) == 0){
-            ssize_t sent = write(users->user->connfd, buffer, strlen(buffer));
-            if (sent == -1) {
+    while (users != NULL)
+    {
+        if (strcmp(users->user->session_id, user_session) == 0)
+        {
+            ssize_t sent = write(users->user->sock_fd, buffer, strlen(buffer));
+            if (sent == -1)
+            {
                 printf("Error sending message to user %s\n", users->user->username);
                 exit(1);
             }
         }
         users = users->next;
     }
-}
+}  
 
 void query(int connfd)
 {
-    char text[BUFFER_SIZE];
+    char text[BUFFER_SIZE] = "";
 
     strcat(text, "The following users are online: ");
-    while(users != NULL){
+    while (users != NULL)
+    {
         strcat(text, users->user->username);
         strcat(text, ", ");
         users = users->next;
     }
 
     strcat(text, "\nThe following sessions are active: ");
-    while(sessions != NULL){
+    while (sessions != NULL)
+    {
         strcat(text, sessions->session->id);
         strcat(text, ", ");
         sessions = sessions->next;
     }
     display_message(buffer, QU_ACK, strlen(text), "client", text);
-    if (write(connfd, buffer, strlen(buffer)) == -1) {
+    if (write(connfd, buffer, strlen(buffer)) == -1)
+    {
         printf("Error sending message to user %s\n", users->user->username);
         exit(1);
     }
-
-
 }
 
 void login(int connfd, struct message *recvd_packet)
 {
     char *packet;
     // if user is active, then print already logged in
-    char* username = strtok((char*)recvd_packet->data, " ");
-    char* password = strtok(NULL, " ");
-    struct user *user = lookup_user_creds(recvd_packet->source, "login.txt");
+    char *curr_username = strtok(recvd_packet->data, " ");
+    char *curr_password = strtok(NULL, " ");
+    struct user *user = lookup_user_creds(curr_username, "login.txt");
 
     if (user != NULL && user->sock_fd)
     {
@@ -189,7 +192,7 @@ void login(int connfd, struct message *recvd_packet)
         exit(0);
     }
     // if user is inactive and password is correct, then set socket fd
-    else if (user != NULL && !user->sock_fd)
+    else if (user != NULL && !user->sock_fd && strcmp(curr_password, user->password) == 0)
     {
         user->sock_fd = connfd;
         packet = "1:0:server:ok";
@@ -225,7 +228,6 @@ void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len)
         convert_client_input_to_packet(input_buffer, &recvd_packet);
         display_packet(&recvd_packet);
 
-
         switch (recvd_packet.type)
         {
         case LOGIN:
@@ -244,10 +246,10 @@ void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len)
             new_session(&recvd_packet);
             break;
         case MESSAGE: // message
-            send_message();
+            send_message(connfd, &recvd_packet);
             break;
         case QUERY: // query
-            query();
+            query(connfd);
             break;
         default:
             printf("invalid type \n");
