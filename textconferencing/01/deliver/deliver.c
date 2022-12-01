@@ -213,7 +213,6 @@ void textApp(int sockfd, char *client_id)
 
             display_message(server_buffer, NEW_SESS, strlen(session_id), client_id, session_id);
             write(sockfd, server_buffer, strlen(server_buffer));
-
             /* read_bytes = read(sockfd, server_buffer, BUFFER_SIZE); */
         }
         else if (strcmp(command, "/list") == 0)

@@ -143,24 +143,23 @@ void rm_session(struct sessions *sessions, struct session *session)
 
 struct session *add_session(struct sessions *sessions, char *session_name)
 {
-	struct sessions *new_head = malloc(sizeof(struct sessions));
 	struct session *new_session = malloc(sizeof(struct session));
-	new_head->session = new_session;
-	strcpy(new_head->session->id, session_name);
-	new_head->session->activeUsers = 1;
+	strcpy(new_session->id, session_name);
+	new_session->activeUsers = 1;
+
 
 	if (sessions)
 	{
 		struct sessions *past = sessions;
-		sessions->session = new_head->session;
+		sessions->session = new_session;
 		sessions->next = past;
-		return new_head->session;
+		return new_session;
 	}
 	else
 	{
-		sessions->session = new_head->session;
+		sessions->session = new_session;
 		sessions->next = NULL;
-		return new_head->session;
+		return new_session;
 	}
 }
 

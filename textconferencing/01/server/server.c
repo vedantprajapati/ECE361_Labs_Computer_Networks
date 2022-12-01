@@ -100,9 +100,12 @@ void new_session(struct message *recvd_packet)
 {
 
     // char *curr_username = recvd_packet->source;
-    char *curr_session = recvd_packet->data;
+    printf("poggers");
 
+    char *curr_session = recvd_packet->data;
+    printf("yo");
     struct session *session = lookup_session(sessions, curr_session);
+    printf("yoooo");
     if (session != NULL)
     {
         printf("Session %s already exists\n", curr_session);
@@ -238,7 +241,6 @@ void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len)
         printf("%s\n", input_buffer);
         convert_client_input_to_packet(input_buffer, &recvd_packet);
         display_packet(&recvd_packet);
-
         switch (recvd_packet.type)
         {
         case LOGIN:
