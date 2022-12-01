@@ -74,7 +74,7 @@ void leave_session(struct message *recvd_packet)
     char *curr_username = recvd_packet->source;
     char *curr_session = recvd_packet->data;
     struct session *session = lookup_session(sessions, session->id);
-    struct user *user = lookup_user_name(users, user->username);
+    struct user *user = lookup_user_name(users, curr_username);
     bool user_removed = rm_user_from_session(sessions, users, session, user);
 
     if (user_removed)
@@ -177,6 +177,8 @@ void login(int connfd, struct message *recvd_packet)
 {
     char *packet;
     // if user is active, then print already logged in
+    char* username = strtok((char*)recvd_packet->data, " ");
+    char* password = strtok(NULL, " ");
     struct user *user = lookup_user_creds(recvd_packet->source, "login.txt");
 
     if (user != NULL && user->sock_fd)
@@ -223,9 +225,7 @@ void textApp(int connfd, int sockfd, struct sockaddr_in cli_addr, socklen_t len)
         convert_client_input_to_packet(input_buffer, &recvd_packet);
         display_packet(&recvd_packet);
 
-        char *curr_username;
-        int h = 0;
-        int i = 0;
+
         switch (recvd_packet.type)
         {
         case LOGIN:
